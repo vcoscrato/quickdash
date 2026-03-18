@@ -24,8 +24,31 @@ QtObject {
     readonly property color subtext:   _p.subtext0
     readonly property color subtextBright: _p.subtext1
 
-    readonly property color accent:    _p.lavender
-    readonly property color accentAlt: _p.mauve
+    readonly property color accent: {
+        switch(paletteName) {
+            case "nord": return _p.blue;
+            case "dracula": return _p.pink;
+            case "gruvbox": return _p.peach;
+            case "tokyo-night": return _p.blue;
+            case "rose-pine": return _p.rosewater;
+            case "solarized-dark": return _p.yellow;
+            case "everforest": return _p.green;
+            default: return _p.lavender;
+        }
+    }
+    
+    readonly property color accentAlt: {
+        switch(paletteName) {
+            case "nord": return _p.sky;
+            case "dracula": return _p.lavender;
+            case "gruvbox": return _p.yellow;
+            case "tokyo-night": return _p.sky;
+            case "rose-pine": return _p.pink;
+            case "solarized-dark": return _p.peach;
+            case "everforest": return _p.blue;
+            default: return _p.mauve;
+        }
+    }
     readonly property color pink:      _p.pink
 
     readonly property color success:   _p.green

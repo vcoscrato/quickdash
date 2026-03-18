@@ -2,6 +2,11 @@
 
 This is my personal Wayland dashboard, built with [QuickShell](https://quickshell.outfoxxed.me/). It lives as a toggleable overlay — out of the way when I don't need it, instantly available when I do. No persistent bars, no always-on widgets eating screen space.
 
+<p align="center">
+  <img src="github/print1.png" width="45%" />
+  <img src="github/print2.png" width="45%" />
+</p>
+
 If you're looking for ideas or a starting point for your own setup, feel free to borrow whatever's useful here. If you feel like discussing ideas, open up an issue.
 
 > **Disclaimer:** Major parts of this repository were written by AI (as you can see by the poor code quality and the emote overflow below).
@@ -122,11 +127,11 @@ Default layout if you omit it:
 
 ## Color schemes
 
-- `catppuccin-mocha` — dark, lavender accents (what I use)
+- `catppuccin-mocha` — dark, lavender accents
 - `catppuccin-latte` — light
 - `nord` — blue-gray
 - `dracula` — dark purple
-- `gruvbox` — warm retro
+- `gruvbox` — warm retro (what I use)
 
 ## Project structure
 
