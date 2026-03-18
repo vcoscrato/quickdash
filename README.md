@@ -101,6 +101,7 @@ Available widget names:
 | `audioControl` | Volume (output) |
 | `audioInputControl` | Volume (input/mic) |
 | `brightnessControl` | Brightness |
+| `displayControl` | Display mirror mode toggle |
 | `networkPanel` | Network |
 | `bluetoothPanel` | Bluetooth |
 | `notificationCenter` | Notifications |
@@ -117,6 +118,7 @@ Default layout if you omit it:
     ["notificationCenter", "keyboardLayout"],
     ["nowPlaying"],
     ["audioControl", "audioInputControl"],
+    ["brightnessControl", "displayControl"],
     ["networkPanel"],
     ["bluetoothPanel"],
     ["calendar"],

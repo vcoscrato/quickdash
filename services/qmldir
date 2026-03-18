@@ -4,3 +4,4 @@ singleton SystemState 1.0 SystemState.qml
 singleton ProcUtils 1.0 ProcUtils.qml
 singleton NetworkService 1.0 NetworkService.qml
 singleton BluetoothService 1.0 BluetoothService.qml
+singleton DisplayService 1.0 DisplayService.qml
