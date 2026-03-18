@@ -1,0 +1,5 @@
+config.json
+.qt/
+.DS_Store
+*.qmlc
+*.jsc
