@@ -32,6 +32,7 @@ If you're looking for ideas or a starting point for your own setup, feel free to
 
 Optional but worth having:
 - **Hyprland** — needed for the keyboard layout switcher; also what I use as my compositor
+- **brightnessctl** — needed to change brightness from the brightness widget
 - **hyprsunset** — needed for the Night Light toggle in the brightness widget
 
 ## Running it

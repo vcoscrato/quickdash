@@ -7,20 +7,15 @@ Components.Card {
     id: root
     title: ""
 
-    visible: root.battery !== null
+    visible: root.batteryReady && root.battery.isLaptopBattery && root.battery.isPresent
 
-    // UPower.DeviceState.Charging = 1
-    readonly property bool isCharging: root.battery !== null && root.battery.state === 1
-
-    property var battery: {
-        if (!UPower.devices) return null;
-        for (var i = 0; i < UPower.devices.length; i++) {
-            if (UPower.devices[i].type === UPower.DeviceType.Battery) {
-                return UPower.devices[i];
-            }
-        }
-        return null;
-    }
+    readonly property var battery: UPower.displayDevice
+    readonly property bool batteryReady: root.battery !== null && root.battery.ready
+    readonly property real batteryPercent: root.batteryReady ? root.battery.percentage * 100 : 0
+    readonly property bool isCharging: root.batteryReady && (
+        root.battery.state === UPowerDeviceState.Charging
+        || root.battery.state === UPowerDeviceState.PendingCharge
+    )
 
     function getBatteryIcon(percentage, charging) {
         if (charging) return "🔌";
@@ -42,7 +37,7 @@ Components.Card {
         spacing: ThemeModule.Theme.spacingSmall
 
         Text {
-            text: root.battery ? root.getBatteryIcon(root.battery.percentage, root.isCharging) : "🔋"
+            text: root.batteryReady ? root.getBatteryIcon(root.batteryPercent, root.isCharging) : "🔋"
             font.pixelSize: ThemeModule.Theme.fontSizeLarge
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -63,12 +58,12 @@ Components.Card {
                 }
 
                 Text {
-                    text: root.battery ? Math.round(root.battery.percentage) + "%" : "—"
+                    text: root.batteryReady ? Math.round(root.batteryPercent) + "%" : "—"
                     font.pixelSize: ThemeModule.Theme.fontSizeNormal
                     font.family: ThemeModule.Theme.fontFamily
                     color: {
-                        if (!root.battery) return ThemeModule.Theme.subtext;
-                        var pct = root.battery.percentage;
+                        if (!root.batteryReady) return ThemeModule.Theme.subtext;
+                        var pct = root.batteryPercent;
                         if (pct > 30) return ThemeModule.Theme.success;
                         if (pct > 10) return ThemeModule.Theme.warning;
                         return ThemeModule.Theme.error;
@@ -78,8 +73,11 @@ Components.Card {
 
             Text {
                 text: {
-                    if (!root.battery) return "";
-                    if (root.isCharging) return "⚡ Charging";
+                    if (!root.batteryReady) return "";
+                    if (root.isCharging) {
+                        var timeToFull = root.formatTimeRemaining(root.battery.timeToFull);
+                        return timeToFull ? ("⚡ " + timeToFull + " until full") : "⚡ Charging";
+                    }
                     return root.formatTimeRemaining(root.battery.timeToEmpty);
                 }
                 font.pixelSize: ThemeModule.Theme.fontSizeSmall
@@ -105,11 +103,11 @@ Components.Card {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 anchors.margins: 2
-                width: root.battery ? (root.battery.percentage / 100) * (parent.width - 4) : 0
+                width: root.batteryReady ? (root.batteryPercent / 100) * (parent.width - 4) : 0
                 radius: 2
                 color: {
-                    if (!root.battery) return ThemeModule.Theme.subtext;
-                    var pct = root.battery.percentage;
+                    if (!root.batteryReady) return ThemeModule.Theme.subtext;
+                    var pct = root.batteryPercent;
                     if (pct > 30) return ThemeModule.Theme.success;
                     if (pct > 10) return ThemeModule.Theme.warning;
                     return ThemeModule.Theme.error;
