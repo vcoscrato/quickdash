@@ -14,6 +14,20 @@ Singleton {
     property var activePopups: []
     property int popupCounter: 0
 
+    // Map of popupId → Timer object for proper cleanup on manual dismiss
+    property var popupTimers: ({})
+
+    // Incremented periodically to force re-evaluation of time-ago strings
+    property int refreshTick: 0
+
+    Timer {
+        id: refreshTickTimer
+        interval: 30000 // 30 seconds
+        running: root.dashboardVisible
+        repeat: true
+        onTriggered: root.refreshTick++
+    }
+
     function setDashboardState(visible, active) {
         root.dashboardVisible = !!visible;
         root.dashboardActive = !!active;
@@ -28,6 +42,15 @@ Singleton {
             }
         }
         root.activePopups = current;
+
+        // Clean up the associated timer
+        var timers = root.popupTimers;
+        if (timers[popupId]) {
+            timers[popupId].stop();
+            timers[popupId].destroy();
+            delete timers[popupId];
+            root.popupTimers = timers;
+        }
     }
 
     function clearHistory() {
@@ -40,6 +63,13 @@ Singleton {
             current.splice(index, 1);
             root.notificationHistory = current;
         }
+    }
+
+    function timeoutForUrgency(urgency) {
+        // NotificationUrgency: Low=0, Normal=1, Critical=2
+        if (urgency === 2) return 10000; // Critical: 10s
+        if (urgency === 0) return 3000;  // Low: 3s
+        return 5000;                      // Normal: 5s
     }
 
     function addNotification(notification, timerParent) {
@@ -66,13 +96,17 @@ Singleton {
 
             var parentObj = timerParent || root;
             var timer = Qt.createQmlObject("import QtQml; Timer {}", parentObj);
-            timer.interval = 5000;
+            timer.interval = root.timeoutForUrgency(notification.urgency);
             timer.repeat = false;
             timer.triggered.connect(function() {
                 root.dismissPopup(popupId);
-                timer.destroy();
             });
             timer.start();
+
+            // Store reference for cleanup on manual dismiss
+            var timers = root.popupTimers;
+            timers[popupId] = timer;
+            root.popupTimers = timers;
         }
 
         var history = root.notificationHistory.slice();

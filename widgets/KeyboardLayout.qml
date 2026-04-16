@@ -9,6 +9,7 @@ Components.Card {
     id: root
     title: "Keyboard"
     icon: "⌨"
+    visible: root.keyboardLayouts && root.keyboardLayouts.length > 1
 
     property var keyboardLayouts: ["us"]
     property int currentLayoutIndex: 0

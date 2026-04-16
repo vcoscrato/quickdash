@@ -3,8 +3,8 @@
 This is my personal Wayland dashboard, built with [QuickShell](https://quickshell.outfoxxed.me/). It lives as a toggleable overlay — out of the way when I don't need it, instantly available when I do. No persistent bars, no always-on widgets eating screen space.
 
 <p align="center">
-  <img src="github/print1.png" width="45%" />
-  <img src="github/print2.png" width="45%" />
+  <img src=".github/print1.png" width="45%" />
+  <img src=".github/print2.png" width="45%" />
 </p>
 
 If you're looking for ideas or a starting point for your own setup, feel free to borrow whatever's useful here. If you feel like discussing ideas, open up an issue.
@@ -131,39 +131,55 @@ Default layout if you omit it:
 ## Color schemes
 
 - `catppuccin-mocha` — dark, lavender accents
+- `catppuccin-macchiato` — dark
+- `catppuccin-frappe` — dark
 - `catppuccin-latte` — light
 - `nord` — blue-gray
 - `dracula` — dark purple
 - `gruvbox` — warm retro (what I use)
+- `tokyo-night` — dark blue/purple
+- `rose-pine` — dark pine/rose
+- `solarized-dark` — teal/blue
+- `everforest` — warm green
 
 ## Project structure
 
 ```
 quickdash/
-├── shell.qml
-├── Dashboard.qml
-├── config.example.json
-├── theme/
+├── shell.qml              # Entry point
+├── Dashboard.qml          # Dashboard window content
+├── NotificationToastWindow.qml  # Toast overlay
+├── config.example.json    # Example config for new users
+├── .github/               # Screenshots and assets
+├── theme/                 # Styling and palettes
 │   ├── Theme.qml
 │   ├── Palettes.qml
 │   └── qmldir
-├── services/
+├── services/              # Logic and system interactions
 │   ├── AudioService.qml
 │   ├── NetworkService.qml
 │   ├── BluetoothService.qml
+│   ├── DisplayService.qml
 │   ├── SystemState.qml
+│   ├── ProcUtils.qml
 │   └── qmldir
-├── components/
+├── components/            # Reusable UI parts
 │   ├── Card.qml
 │   ├── DeviceRow.qml
 │   ├── TogglePill.qml
 │   ├── StyledSlider.qml
-│   └── ...
-└── widgets/
+│   └── qmldir
+└── widgets/               # Functional dashboard modules
     ├── Clock.qml
     ├── NowPlaying.qml
     ├── AudioControl.qml
-    └── ...
+    ├── BrightnessControl.qml
+    ├── DisplayControl.qml
+    ├── NetworkPanel.qml
+    ├── BluetoothPanel.qml
+    ├── NotificationCenter.qml
+    ├── KeyboardLayout.qml
+    └── qmldir
 ```
 
 QuickShell supports live reloading — edit any `.qml` file and changes apply instantly.

@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import "theme" as ThemeModule
+import "../theme" as ThemeModule
 
 Rectangle {
     id: dashboard
@@ -29,19 +29,19 @@ Rectangle {
     // Names are camelCase versions of the filenames in widgets/
     function widgetSource(name) {
         var map = {
-            "clock":              "widgets/Clock.qml",
-            "nowPlaying":         "widgets/NowPlaying.qml",
-            "audioControl":       "widgets/AudioControl.qml",
-            "audioInputControl":  "widgets/AudioInputControl.qml",
-            "brightnessControl":  "widgets/BrightnessControl.qml",
-            "displayControl":     "widgets/DisplayControl.qml",
-            "networkPanel":       "widgets/NetworkPanel.qml",
-            "bluetoothPanel":     "widgets/BluetoothPanel.qml",
-            "notificationCenter": "widgets/NotificationCenter.qml",
-            "keyboardLayout":    "widgets/KeyboardLayout.qml",
-            "calendar":           "widgets/Calendar.qml",
-            "batteryStatus":      "widgets/BatteryStatus.qml",
-            "systemTray":         "widgets/SystemTray.qml"
+            "clock":              "../widgets/Clock.qml",
+            "nowPlaying":         "../widgets/NowPlaying.qml",
+            "audioControl":       "../widgets/AudioControl.qml",
+            "audioInputControl":  "../widgets/AudioInputControl.qml",
+            "brightnessControl":  "../widgets/BrightnessControl.qml",
+            "displayControl":     "../widgets/DisplayControl.qml",
+            "networkPanel":       "../widgets/NetworkPanel.qml",
+            "bluetoothPanel":     "../widgets/BluetoothPanel.qml",
+            "notificationCenter": "../widgets/NotificationCenter.qml",
+            "keyboardLayout":    "../widgets/KeyboardLayout.qml",
+            "calendar":           "../widgets/Calendar.qml",
+            "batteryStatus":      "../widgets/BatteryStatus.qml",
+            "systemTray":         "../widgets/SystemTray.qml"
         };
         return map[name] || "";
     }

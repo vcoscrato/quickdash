@@ -96,10 +96,20 @@ Components.Card {
         brightnessSetProc.running = true;
     }
 
+    Process {
+        id: nightLightStatusProc
+        command: ["pgrep", "hyprsunset"]
+        running: false
+        onExited: function(exitCode) {
+            root.nightLightOn = exitCode === 0;
+        }
+    }
+
     // ── Read current brightness on load ──────
     Component.onCompleted: {
         backlightProbeProc.running = true;
         helperCheckProc.running = true;
+        nightLightStatusProc.running = true;
     }
 
     FileView {
@@ -207,9 +217,11 @@ Components.Card {
             width: parent.width
             spacing: ThemeModule.Theme.spacingSmall
 
-            Components.IconButton {
-                iconText: root.brightnessPercent <= 30 ? "🔅" : "🔆"
-                size: 32
+            Text {
+                text: root.brightnessPercent <= 30 ? "🔅" : "🔆"
+                font.pixelSize: ThemeModule.Theme.fontSizeLarge
+                width: 32
+                horizontalAlignment: Text.AlignHCenter
                 anchors.verticalCenter: parent.verticalCenter
             }
 

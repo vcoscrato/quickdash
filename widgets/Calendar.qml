@@ -14,9 +14,30 @@ Components.Card {
                                         "July", "August", "September", "October", "November", "December"]
     readonly property var dayNames: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
-    readonly property int today: new Date().getDate()
-    readonly property int todayMonth: new Date().getMonth()
-    readonly property int todayYear: new Date().getFullYear()
+    property int today: new Date().getDate()
+    property int todayMonth: new Date().getMonth()
+    property int todayYear: new Date().getFullYear()
+    property bool dashboardActive: true
+
+    function refreshToday() {
+        var now = new Date();
+        root.today = now.getDate();
+        root.todayMonth = now.getMonth();
+        root.todayYear = now.getFullYear();
+    }
+
+    onDashboardActiveChanged: {
+        if (root.dashboardActive) root.refreshToday();
+    }
+
+    // Refresh at midnight if dashboard stays open
+    Timer {
+        id: midnightRefreshTimer
+        interval: 60000
+        running: root.dashboardActive
+        repeat: true
+        onTriggered: root.refreshToday()
+    }
 
     function daysInMonth(year, month) {
         return new Date(year, month + 1, 0).getDate();

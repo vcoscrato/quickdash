@@ -6,6 +6,7 @@ import Quickshell.Services.Notifications
 import QtQuick
 import "services" as Services
 import "theme" as ThemeModule
+import "core" as Core
 
 ShellRoot {
     id: root
@@ -31,12 +32,14 @@ ShellRoot {
         id: configFile
         path: Qt.resolvedUrl("config.json")
         blockLoading: true
+        printErrors: false
     }
 
     FileView {
         id: fallbackConfigFile
         path: Qt.resolvedUrl("config.example.json")
         blockLoading: true
+        printErrors: false
     }
 
     // Parse config from file
@@ -67,7 +70,7 @@ ShellRoot {
         color: ThemeModule.Theme.bg
         onClosed: Qt.quit()
 
-        Dashboard {
+        Core.Dashboard {
             anchors.fill: parent
             config: root.config
             dashboardVisible: root.dashboardVisible
@@ -76,5 +79,5 @@ ShellRoot {
     }
 
     // ── Notification Toasts ─────────────────────────────
-    NotificationToastWindow {}
+    Core.NotificationToastWindow {}
 }

@@ -1,0 +1,22 @@
+{
+    "colorScheme": "catppuccin-mocha",
+    "audioQuickSwitch": [
+        "Speakers",
+        "Headphones"
+    ],
+    "audioInputQuickSwitch": [
+        "Built-in Microphone",
+        "Webcam"
+    ],
+    "keyboardLayouts": [
+        "us"
+    ],
+    "layout": [
+        ["clock", "notificationCenter", "keyboardLayout"],
+        ["nowPlaying"],
+        ["audioControl", "audioInputControl"],
+        ["networkPanel", "bluetoothPanel"],
+        ["systemTray"],
+        ["calendar"]
+    ]
+}

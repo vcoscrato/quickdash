@@ -91,7 +91,8 @@ Components.Card {
                                 color: ThemeModule.Theme.accent
                             }
                             Text {
-                                text: "· " + root.formatTimeAgo(modelData.time)
+                                // refreshTick dependency forces periodic re-evaluation
+                                text: "· " + root.formatTimeAgo(modelData.time, Services.SystemState.refreshTick)
                                 font.pixelSize: 10
                                 font.family: ThemeModule.Theme.fontFamily
                                 color: ThemeModule.Theme.overlay
@@ -167,7 +168,9 @@ Components.Card {
         }
     }
 
-    function formatTimeAgo(date) {
+    function formatTimeAgo(date, tick) {
+        // 'tick' parameter is unused but creates a QML binding dependency
+        // that forces periodic re-evaluation of the time-ago string.
         if (!date) return "";
         var now = new Date();
         var diff = Math.floor((now - date) / 1000);
