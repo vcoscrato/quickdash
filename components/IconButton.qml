@@ -11,6 +11,7 @@ Rectangle {
     property real size: 36
     property real iconXOffset: 0
     property real iconYOffset: 0
+    property alias containsMouse: mouseArea.containsMouse
 
     signal clicked()
 

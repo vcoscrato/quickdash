@@ -87,6 +87,13 @@ QtObject {
     readonly property int animDuration:     200
     readonly property int animDurationSlow: 350
 
+    // ── Layout ──────────────────────────────────────────────
+    readonly property int sidebarWidth:       52
+    readonly property int sidebarIconSize:    48
+    readonly property int miniPlayerHeight:   40
+    readonly property int separatorThickness: 1
+    readonly property color separator:        Qt.rgba(overlay.r, overlay.g, overlay.b, 0.15)
+
     // ── Helpers ─────────────────────────────────────────────
     function toneColor(tone) {
         if (tone === "success") return root.success;

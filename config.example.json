@@ -1,22 +1,33 @@
 {
     "colorScheme": "catppuccin-mocha",
-    "audioQuickSwitch": [
-        "Speakers",
-        "Headphones"
+    "countdowns": [
+        { "label": "Vacation", "date": "2026-05-20" }
     ],
-    "audioInputQuickSwitch": [
-        "Built-in Microphone",
-        "Webcam"
+    "quickCommands": [
+        { "label": "Terminal", "icon": "", "cmd": "kitty" },
+        { "label": "Files", "icon": "📁", "cmd": "thunar" },
+        { "label": "Browser", "icon": "🌐", "cmd": "firefox" }
     ],
-    "keyboardLayouts": [
-        "us"
+    "topAnchor": ["clock"],
+    "bottomAnchor": ["systemTray", "calendar"],
+    "middleDefault": ["dailyFocus", "weatherStrip", "countdowns", "notificationCenter", "randomQuote"],
+    "sidebar": [
+        { "widget": "configPanel", "icon": "⚙" },
+        { "widget": "clipboardHistory", "icon": "📋" },
+        { "widget": "scratchpad", "icon": "📝" },
+        { "widget": "quickTimer", "icon": "⏱" },
+        { "widget": "screenshotControls", "icon": "📸" },
+        { "widget": "quickCommands", "icon": "🚀" },
+        { "widget": "networkPanel",    "icon": "📶" },
+        { "widget": "bluetoothPanel",  "icon": "🔵" },
+        { "widget": "audioControl",    "icon": "🔊" },
+        { "widget": "audioInputControl", "icon": "🎤" },
+        { "widget": "brightnessControl", "icon": "☀" },
+        { "widget": "displayControl",  "icon": "🖥" },
+        { "widget": "keyboardLayout",  "icon": "⌨" },
+        { "widget": "systemMonitor",   "icon": "📊" },
+        { "widget": "powerMenu",       "icon": "⏻" }
     ],
-    "layout": [
-        ["clock", "notificationCenter", "keyboardLayout"],
-        ["nowPlaying"],
-        ["audioControl", "audioInputControl"],
-        ["networkPanel", "bluetoothPanel"],
-        ["systemTray"],
-        ["calendar"]
-    ]
+    "audioQuickSwitch": ["Speakers", "Headphones"],
+    "keyboardLayouts": ["us", "br"]
 }

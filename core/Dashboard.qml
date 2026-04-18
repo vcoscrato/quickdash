@@ -2,6 +2,9 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import "../theme" as ThemeModule
+import "../components" as Components
+import "../services" as Services
+import "../widgets" as Widgets
 
 Rectangle {
     id: dashboard
@@ -10,25 +13,42 @@ Rectangle {
     property var config: null
     property bool dashboardVisible: true
     property bool dashboardActive: true
+    
+    property string activePanel: ""
 
-    // ── Default layout (single-column, backward-compatible) ──
-    readonly property var defaultLayout: [
-        ["clock"],
-        ["notificationCenter", "keyboardLayout"],
-        ["nowPlaying"],
-        ["audioControl", "audioInputControl"],
-        ["brightnessControl", "displayControl"],
-        ["networkPanel"],
-        ["bluetoothPanel"],
-        ["calendar"],
-        ["batteryStatus"],
-        ["systemTray"]
+    // ── Default config values ──
+    readonly property var defaultTopAnchor: ["clock"]
+    readonly property var defaultBottomAnchor: ["systemTray", "calendar"]
+    readonly property var defaultMiddle: ["notificationCenter", "batteryStatus"]
+    readonly property var defaultSidebar: [
+        { "widget": "networkPanel",    "icon": "📶" },
+        { "widget": "bluetoothPanel",  "icon": "🔵" },
+        { "widget": "audioControl",    "icon": "🔊" },
+        { "widget": "audioInputControl", "icon": "🎤" },
+        { "widget": "brightnessControl", "icon": "☀" },
+        { "widget": "displayControl",  "icon": "🖥" },
+        { "widget": "keyboardLayout",  "icon": "⌨" }
     ]
 
-    // Widget name → QML file path mapping
-    // Names are camelCase versions of the filenames in widgets/
+    property var topAnchorWidgets: config && config.topAnchor ? config.topAnchor : defaultTopAnchor
+    property var bottomAnchorWidgets: config && config.bottomAnchor ? config.bottomAnchor : defaultBottomAnchor
+    property var middleDefaultWidgets: config && config.middleDefault ? config.middleDefault : defaultMiddle
+    property var sidebarItems: config && config.sidebar ? config.sidebar : defaultSidebar
+
     function widgetSource(name) {
         var map = {
+            "dailyFocus":         "../widgets/DailyFocus.qml",
+            "weatherStrip":       "../widgets/WeatherStrip.qml",
+            "countdowns":         "../widgets/Countdowns.qml",
+            "randomQuote":        "../widgets/RandomQuote.qml",
+            "configPanel":        "../widgets/ConfigPanel.qml",
+            "clipboardHistory":   "../widgets/ClipboardHistory.qml",
+            "scratchpad":         "../widgets/Scratchpad.qml",
+            "quickTimer":         "../widgets/QuickTimer.qml",
+            "screenshotControls": "../widgets/ScreenshotControls.qml",
+            "quickCommands":      "../widgets/QuickCommands.qml",
+            "systemMonitor":      "../widgets/SystemMonitor.qml",
+            "powerMenu":          "../widgets/PowerMenu.qml",
             "clock":              "../widgets/Clock.qml",
             "nowPlaying":         "../widgets/NowPlaying.qml",
             "audioControl":       "../widgets/AudioControl.qml",
@@ -38,7 +58,7 @@ Rectangle {
             "networkPanel":       "../widgets/NetworkPanel.qml",
             "bluetoothPanel":     "../widgets/BluetoothPanel.qml",
             "notificationCenter": "../widgets/NotificationCenter.qml",
-            "keyboardLayout":    "../widgets/KeyboardLayout.qml",
+            "keyboardLayout":     "../widgets/KeyboardLayout.qml",
             "calendar":           "../widgets/Calendar.qml",
             "batteryStatus":      "../widgets/BatteryStatus.qml",
             "systemTray":         "../widgets/SystemTray.qml"
@@ -46,107 +66,290 @@ Rectangle {
         return map[name] || "";
     }
 
-    function sanitizeLayout(layout) {
-        var sourceLayout = layout || [];
-        var clean = [];
-        for (var i = 0; i < sourceLayout.length; i++) {
-            var row = sourceLayout[i];
-            var cleanRow = [];
-            for (var j = 0; j < row.length; j++) {
-                if (widgetSource(row[j]) !== "") {
-                    cleanRow.push(row[j]);
-                }
-            }
-            if (cleanRow.length > 0) {
-                clean.push(cleanRow);
-            }
+    function getMicroStatus(widget) {
+        if (widget === "audioControl") return Services.AudioService.outputVolumePercent;
+        if (widget === "audioInputControl") return Services.AudioService.inputVolumePercent;
+        if (widget === "networkPanel") return Services.NetworkService.currentConnectedWifi ? "●" : "";
+        if (widget === "bluetoothPanel") {
+            var n = Services.BluetoothService.connectedRows.length;
+            return n > 0 ? n.toString() : "";
         }
-        return clean;
+        return "";
     }
 
-    // Use config layout or fall back to default, skipping removed/unknown widgets.
-    property var layoutRows: config ? sanitizeLayout((config.layout && config.layout.length > 0) ? config.layout : defaultLayout) : []
+    function getStatusText(widget) {
+        if (widget === "audioControl") return "Volume: " + Services.AudioService.outputVolumePercent + "%";
+        if (widget === "audioInputControl") return "Mic: " + Services.AudioService.inputVolumePercent + "%";
+        if (widget === "networkPanel") {
+            if (Services.NetworkService.currentConnectedWifi) return "WiFi: " + Services.NetworkService.currentConnectedWifi.ssid;
+            return "WiFi off / Disconnected";
+        }
+        if (widget === "bluetoothPanel") return Services.BluetoothService.btOn ? "Bluetooth On" : "Bluetooth Off";
+        return "";
+    }
 
-    Flickable {
-        id: flickable
+    Row {
         anchors.fill: parent
         anchors.margins: ThemeModule.Theme.spacingMedium
-        contentHeight: widgetColumn.height
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        flickDeceleration: 3000
 
-        ScrollBar.vertical: ScrollBar {
-            policy: flickable.contentHeight > flickable.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-            contentItem: Rectangle {
-                implicitWidth: 4
-                radius: 2
-                color: ThemeModule.Theme.overlay
-                opacity: 0.5
+        // ── Sidebar Rail ──
+        Item {
+            width: ThemeModule.Theme.sidebarWidth
+            height: parent.height
+
+            Column {
+                anchors.top: parent.top
+                width: parent.width
+                spacing: ThemeModule.Theme.spacingSmall
+
+                Repeater {
+                    model: dashboard.sidebarItems.filter(function(i) {
+                        var wName = typeof i === "string" ? i : i.widget;
+                        return wName !== "configPanel" && wName !== "powerMenu";
+                    })
+                    delegate: Components.SidebarIcon {
+                        required property var modelData
+                        property string wName: typeof modelData === "string" ? modelData : modelData.widget
+                        property string wIcon: typeof modelData === "string" ? "❓" : modelData.icon
+
+                        widgetName: wName
+                        iconText: wIcon
+                        active: dashboard.activePanel === wName
+                        microStatus: dashboard.getMicroStatus(wName)
+                        statusText: dashboard.getStatusText(wName)
+
+                        onActivated: function(name) {
+                            if (dashboard.activePanel === name) {
+                                dashboard.activePanel = "";
+                            } else {
+                                dashboard.activePanel = name;
+                            }
+                        }
+
+                        onWheelDelta: function(delta) {
+                            if (wName === "audioControl") {
+                                var step = 5;
+                                var newVol = Services.AudioService.outputVolumePercent + (delta > 0 ? step : -step);
+                                Services.AudioService.setOutputVolumePercent(Math.max(0, Math.min(100, newVol)));
+                            } else if (wName === "audioInputControl") {
+                                var stepIn = 5;
+                                var newVolIn = Services.AudioService.inputVolumePercent + (delta > 0 ? stepIn : -stepIn);
+                                Services.AudioService.setInputVolumePercent(Math.max(0, Math.min(100, newVolIn)));
+                            }
+                        }
+                    }
+                }
+            }
+
+            Column {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                spacing: ThemeModule.Theme.spacingSmall
+
+                Repeater {
+                    model: dashboard.sidebarItems.filter(function(i) {
+                        var wName = typeof i === "string" ? i : i.widget;
+                        return wName === "configPanel" || wName === "powerMenu";
+                    })
+                    delegate: Components.SidebarIcon {
+                        required property var modelData
+                        property string wName: typeof modelData === "string" ? modelData : modelData.widget
+                        property string wIcon: typeof modelData === "string" ? "❓" : modelData.icon
+
+                        widgetName: wName
+                        iconText: wIcon
+                        active: dashboard.activePanel === wName
+                        microStatus: dashboard.getMicroStatus(wName)
+                        statusText: dashboard.getStatusText(wName)
+
+                        onActivated: function(name) {
+                            if (dashboard.activePanel === name) {
+                                dashboard.activePanel = "";
+                            } else {
+                                dashboard.activePanel = name;
+                            }
+                        }
+                    }
+                }
             }
         }
 
+        // ── Separator ──
+        Rectangle {
+            width: ThemeModule.Theme.separatorThickness
+            height: parent.height
+            color: ThemeModule.Theme.separator
+            anchors.margins: ThemeModule.Theme.spacingSmall
+        }
+
+        Item { width: ThemeModule.Theme.spacingSmall; height: 1 }
+
+        // ── Content Column ──
         Column {
-            id: widgetColumn
-            width: flickable.width
-            spacing: ThemeModule.Theme.spacingMedium
+            width: parent.width - ThemeModule.Theme.sidebarWidth - ThemeModule.Theme.separatorThickness - ThemeModule.Theme.spacingSmall
+            height: parent.height
 
-            Repeater {
-                model: dashboard.layoutRows
+            // Top Anchor
+            Column {
+                id: topAnchorColumn
+                width: parent.width
+                spacing: ThemeModule.Theme.spacingMedium
+                Repeater {
+                    model: dashboard.topAnchorWidgets
+                    delegate: Loader {
+                        required property string modelData
+                        width: parent.width
+                        active: dashboard.widgetSource(modelData) !== ""
+                        source: dashboard.widgetSource(modelData)
+                        onLoaded: {
+                            if (item && "dashboardActive" in item) {
+                                item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                            }
+                        }
+                    }
+                }
+            }
 
-                delegate: Row {
-                    id: rowDelegate
-                    required property var modelData
-                    width: widgetColumn.width
-                    spacing: ThemeModule.Theme.spacingMedium
+            Item { width: 1; height: ThemeModule.Theme.spacingMedium }
 
-                    property var rowWidgets: rowDelegate.modelData
-                    property int widgetCount: rowDelegate.rowWidgets.length
+            // Mini Player (auto-appears if player is active)
+            Widgets.MiniPlayer {
+                id: miniPlayer
+                dashboardActive: dashboard.dashboardActive
+                onClicked: {
+                    if (dashboard.activePanel === "nowPlaying") dashboard.activePanel = "";
+                    else dashboard.activePanel = "nowPlaying";
+                }
+            }
 
-                    Repeater {
-                        model: rowDelegate.rowWidgets
+            Item { width: 1; height: miniPlayer.hasPlayer ? ThemeModule.Theme.spacingMedium : 0; Behavior on height { NumberAnimation { duration: ThemeModule.Theme.animDuration } } }
 
-                        delegate: Loader {
-                            id: widgetLoader
-                            required property var modelData
-                            property string widgetName: widgetLoader.modelData
-                            property int siblings: rowDelegate.widgetCount
+            // ── Scrollable Middle Zone ──
+            Flickable {
+                id: middleFlickable
+                width: parent.width
+                height: parent.height - topAnchorColumn.height - (miniPlayer.hasPlayer ? miniPlayer.height + ThemeModule.Theme.spacingMedium : 0) - bottomAnchorColumn.height - ThemeModule.Theme.spacingMedium * 3
+                contentHeight: middleContentColumn.height
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                flickDeceleration: 3000
 
-                            width: (rowDelegate.width - (siblings - 1) * ThemeModule.Theme.spacingMedium) / siblings
-                            active: dashboard.dashboardVisible && dashboard.widgetSource(widgetName) !== ""
-                            asynchronous: true
-                            source: dashboard.widgetSource(widgetName)
+                ScrollBar.vertical: ScrollBar {
+                    policy: middleFlickable.contentHeight > middleFlickable.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                    contentItem: Rectangle {
+                        implicitWidth: 4
+                        radius: 2
+                        color: ThemeModule.Theme.overlay
+                        opacity: 0.5
+                    }
+                }
 
-                            onLoaded: {
-                                if (!item) return;
-                                // Bind width to follow the Loader
-                                item.width = Qt.binding(function() { return widgetLoader.width; });
-                                if ("dashboardActive" in item) {
-                                    item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                Item {
+                    id: middleContentColumn
+                    width: middleFlickable.width
+                    height: Math.max(defaultMiddleColumn.height, activePanelLoaderContainer.height)
+
+                    // Default content
+                    Column {
+                        id: defaultMiddleColumn
+                        width: parent.width
+                        spacing: ThemeModule.Theme.spacingMedium
+                        opacity: dashboard.activePanel === "" ? 1.0 : 0.0
+                        visible: opacity > 0
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: 150 }
+                        }
+
+                        Repeater {
+                            model: dashboard.middleDefaultWidgets
+                            delegate: Loader {
+                                required property string modelData
+                                width: parent.width
+                                active: dashboard.widgetSource(modelData) !== ""
+                                source: dashboard.widgetSource(modelData)
+                                onLoaded: {
+                                    if (item && "dashboardActive" in item) {
+                                        item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive && dashboard.activePanel === ""; });
+                                    }
                                 }
                             }
+                        }
+                    }
 
-                            Binding {
-                                target: widgetLoader.item
-                                property: "quickSwitchDevices"
-                                when: widgetLoader.status === Loader.Ready && widgetLoader.widgetName === "audioControl"
-                                value: dashboard.config.audioQuickSwitch || []
+                    // Active Panel Container
+                    Item {
+                        id: activePanelLoaderContainer
+                        width: parent.width
+                        height: activePanelLoader.height
+                        
+                        // Slide-in animation
+                        x: dashboard.activePanel !== "" ? 0 : -20
+                        opacity: dashboard.activePanel !== "" ? 1.0 : 0.0
+                        visible: opacity > 0
+                        
+                        Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                        Loader {
+                            id: activePanelLoader
+                            width: parent.width
+                            active: dashboard.activePanel !== ""
+                            source: dashboard.activePanel !== "" ? dashboard.widgetSource(dashboard.activePanel) : ""
+                            
+                            onLoaded: {
+                                if (!item) return;
+                                
+                                if ("dashboardActive" in item) {
+                                    item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive && dashboard.activePanel !== ""; });
+                                }
+                                if ("collapsible" in item) {
+                                    item.collapsible = false;
+                                    item.collapsed = false;
+                                }
+                                
+                                
+                                // Quick switch arrays for audio
+                                if (dashboard.activePanel === "audioControl") item.quickSwitchDevices = dashboard.config.audioQuickSwitch || [];
+                                if (dashboard.activePanel === "audioInputControl") item.quickSwitchDevices = dashboard.config.audioInputQuickSwitch || [];
+                                if (dashboard.activePanel === "keyboardLayout") item.keyboardLayouts = dashboard.config.keyboardLayouts || ["us"];
                             }
+                        }
+                        
+                        // Close button overlay for the panel
+                        Components.IconButton {
+                            iconText: "✕"
+                            iconSize: 12
+                            size: 24
+                            iconColor: ThemeModule.Theme.overlay
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: ThemeModule.Theme.spacingMedium
+                            z: 100
+                            onClicked: dashboard.activePanel = ""
+                        }
+                    }
+                }
+            }
 
-                            Binding {
-                                target: widgetLoader.item
-                                property: "quickSwitchDevices"
-                                when: widgetLoader.status === Loader.Ready && widgetLoader.widgetName === "audioInputControl"
-                                value: dashboard.config.audioInputQuickSwitch || []
+            Item { width: 1; height: ThemeModule.Theme.spacingMedium }
+
+            // Bottom Anchor
+            Column {
+                id: bottomAnchorColumn
+                width: parent.width
+                spacing: ThemeModule.Theme.spacingMedium
+                Repeater {
+                    model: dashboard.bottomAnchorWidgets
+                    delegate: Loader {
+                        required property string modelData
+                        width: parent.width
+                        active: dashboard.widgetSource(modelData) !== ""
+                        source: dashboard.widgetSource(modelData)
+                        onLoaded: {
+                            if (item && "dashboardActive" in item) {
+                                item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
                             }
-
-                            Binding {
-                                target: widgetLoader.item
-                                property: "keyboardLayouts"
-                                when: widgetLoader.status === Loader.Ready && widgetLoader.widgetName === "keyboardLayout"
-                                value: dashboard.config.keyboardLayouts || ["us"]
-                            }
-
                         }
                     }
                 }

@@ -64,7 +64,7 @@ ShellRoot {
         visible: true
         title: "QuickDash"
 
-        implicitWidth: root.config && root.config.windowWidth ? root.config.windowWidth : 480
+        implicitWidth: root.config && root.config.windowWidth ? root.config.windowWidth : 420
         implicitHeight: root.config && root.config.windowHeight ? root.config.windowHeight : 900
 
         color: ThemeModule.Theme.bg

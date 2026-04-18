@@ -73,11 +73,22 @@ The main options:
     "colorScheme": "catppuccin-mocha",
     "audioQuickSwitch": ["Speakers", "Headphones"],
     "keyboardLayouts": ["us", "br"],
-    "layout": [ ... ]
+    "topAnchor": ["clock"],
+    "bottomAnchor": ["systemTray", "calendar"],
+    "middleDefault": ["notificationCenter", "batteryStatus"],
+    "sidebar": [
+        { "widget": "networkPanel",    "icon": "📶" },
+        { "widget": "bluetoothPanel",  "icon": "🔵" },
+        { "widget": "audioControl",    "icon": "🔊" },
+        { "widget": "audioInputControl", "icon": "🎤" },
+        { "widget": "brightnessControl", "icon": "☀" },
+        { "widget": "displayControl",  "icon": "🖥" },
+        { "widget": "keyboardLayout",  "icon": "⌨" }
+    ]
 }
 ```
 
-You can also set `windowWidth` and `windowHeight` to override the default 480×900 size.
+You can also set `windowWidth` and `windowHeight` to override the default 420×900 size.
 
 ### Audio quick switch
 
@@ -89,16 +100,21 @@ To find your sink names:
 pactl list sinks | grep "Description:"
 ```
 
-### Layout
+### Layout Zones
 
-Widgets are arranged as an array of rows. Each row is an array of widget names — widgets in the same row share the width equally.
+QuickDash uses a 3-zone anchored layout plus a sidebar. The zones are configured via arrays in your config file.
+
+- `topAnchor`: Widgets shown at the top of the dashboard. Usually just `clock`.
+- `bottomAnchor`: Widgets shown at the bottom of the dashboard. Usually `systemTray` and `calendar`.
+- `middleDefault`: Widgets shown in the center space when no sidebar panel is open. Commonly `notificationCenter`.
+- `sidebar`: List of objects specifying the widgets that open as panels when clicked, along with their icon.
 
 Available widget names:
 
 | Name | Widget |
 |------|--------|
 | `clock` | Clock |
-| `nowPlaying` | Media player |
+| `nowPlaying` | Media player (Auto-appears via MiniPlayer when active) |
 | `audioControl` | Volume (output) |
 | `audioInputControl` | Volume (input/mic) |
 | `brightnessControl` | Brightness |
@@ -110,23 +126,6 @@ Available widget names:
 | `calendar` | Calendar |
 | `batteryStatus` | Battery |
 | `systemTray` | System tray |
-
-Default layout if you omit it:
-
-```json
-"layout": [
-    ["clock"],
-    ["notificationCenter", "keyboardLayout"],
-    ["nowPlaying"],
-    ["audioControl", "audioInputControl"],
-    ["brightnessControl", "displayControl"],
-    ["networkPanel"],
-    ["bluetoothPanel"],
-    ["calendar"],
-    ["batteryStatus"],
-    ["systemTray"]
-]
-```
 
 ## Color schemes
 
@@ -168,9 +167,12 @@ quickdash/
 │   ├── DeviceRow.qml
 │   ├── TogglePill.qml
 │   ├── StyledSlider.qml
+│   ├── SidebarIcon.qml
+│   ├── PanelHeader.qml
 │   └── qmldir
 └── widgets/               # Functional dashboard modules
     ├── Clock.qml
+    ├── MiniPlayer.qml
     ├── NowPlaying.qml
     ├── AudioControl.qml
     ├── BrightnessControl.qml

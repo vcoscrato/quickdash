@@ -58,7 +58,7 @@ Components.Card {
             spacing: ThemeModule.Theme.spacingTiny
 
             Repeater {
-                model: root.notifList
+                model: dashboard.activePanel === "notificationCenter" ? root.notifList : root.notifList.slice(0, 3)
 
                 delegate: Rectangle {
                     width: parent.width
