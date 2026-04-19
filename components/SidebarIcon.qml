@@ -14,14 +14,12 @@ Rectangle {
     signal activated(string name)
     signal wheelDelta(int angleDelta)
 
+    readonly property int accentReserve: 4
+
     width: parent ? parent.width : ThemeModule.Theme.sidebarIconSize
     height: ThemeModule.Theme.sidebarIconSize
     radius: ThemeModule.Theme.borderRadiusSmall
     color: active ? Qt.rgba(ThemeModule.Theme.accent.r, ThemeModule.Theme.accent.g, ThemeModule.Theme.accent.b, 0.15) : (mouseArea.containsMouse ? ThemeModule.Theme.cardHover : "transparent")
-
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
 
     // Left accent bar when active
     Rectangle {
@@ -41,39 +39,36 @@ Rectangle {
     }
 
     Column {
-        anchors.centerIn: parent
-        spacing: 2
+        width: parent.width - root.accentReserve
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.horizontalCenterOffset: root.accentReserve / 2
+        spacing: 1
 
         Text {
+            width: parent.width
             text: root.iconText
             font.pixelSize: 18
             color: root.active ? ThemeModule.Theme.accent : (mouseArea.containsMouse ? ThemeModule.Theme.text : ThemeModule.Theme.subtext)
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: ThemeModule.Theme.animDuration }
-            }
+            horizontalAlignment: Text.AlignHCenter
         }
 
         Text {
+            width: parent.width
             text: root.microStatus
             font.pixelSize: 9
             font.family: ThemeModule.Theme.fontFamily
             font.bold: true
             color: root.active ? ThemeModule.Theme.accent : ThemeModule.Theme.overlay
-            anchors.horizontalCenter: parent.horizontalCenter
+            horizontalAlignment: Text.AlignHCenter
             visible: root.microStatus !== ""
-            
-            Behavior on color {
-                ColorAnimation { duration: ThemeModule.Theme.animDuration }
-            }
         }
     }
 
     ToolTip {
         visible: mouseArea.containsMouse && root.statusText !== ""
         text: root.statusText
-        delay: 500
+        delay: 150
     }
 
     MouseArea {

@@ -8,6 +8,7 @@ Components.Card {
     id: root
     title: "Displays"
     icon: "🖥"
+    visible: Services.FeatureSupport.supportsDisplayControl
 
     property bool dashboardActive: true
 

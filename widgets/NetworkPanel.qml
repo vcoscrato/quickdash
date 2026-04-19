@@ -11,32 +11,49 @@ Components.Card {
     collapsible: true
     property bool dashboardActive: true
 
-    headerActions: Row {
-        spacing: ThemeModule.Theme.spacingSmall
-        anchors.verticalCenter: parent.verticalCenter
-
-        // WiFi on/off toggle — separate from the view mode slider
-        Components.TogglePill {
-            visible: Services.NetworkService.networkMode === 0
-            iconText: "📡"
-            label: "WiFi"
-            checked: Services.NetworkService.wifiOn
-            activeColor: ThemeModule.Theme.sky
-            onToggled: function(state) {
-                Services.NetworkService.setWifiEnabled(state);
-            }
+    function connectionHeadline() {
+        if (Services.NetworkService.networkMode === 1) {
+            return Services.NetworkService.wiredConnected
+                ? (Services.NetworkService.wiredConnectionName || "Ethernet connected")
+                : "Ethernet idle";
         }
 
-        // View mode slider — only changes the displayed view, does NOT toggle WiFi radio
-        Components.ModeSlider {
-            leftLabel: "WiFi"
-            rightLabel: "Ethernet"
-            selectedIndex: Services.NetworkService.networkMode
-            activeColor: ThemeModule.Theme.sky
-            onChanged: function(index) {
-                Services.NetworkService.networkMode = index;
-            }
+        if (!Services.NetworkService.wifiOn) {
+            return "Wi-Fi radio is off";
         }
+        if (Services.NetworkService.connecting) {
+            return "Joining " + Services.NetworkService.connectingSsid;
+        }
+        if (Services.NetworkService.currentConnectedWifi) {
+            return Services.NetworkService.currentConnectedWifi.ssid;
+        }
+        return "Wireless standby";
+    }
+
+    function connectionSubtitle() {
+        if (Services.NetworkService.networkMode === 1) {
+            return Services.NetworkService.wiredConnected
+                ? ((Services.NetworkService.wiredIp && Services.NetworkService.wiredIp !== "") ? "IP " + Services.NetworkService.wiredIp : "Cable link active")
+                : "Switch to Wi-Fi or plug in a cable.";
+        }
+
+        if (!Services.NetworkService.wifiOn) {
+            return "Turn it on here when you want to scan or reconnect.";
+        }
+        if (Services.NetworkService.connecting) {
+            return "NetworkManager is negotiating the connection.";
+        }
+        if (Services.NetworkService.currentConnectedWifi) {
+            return Services.NetworkService.connectedWifiSubtitle(Services.NetworkService.currentConnectedWifi);
+        }
+        if (Services.NetworkService.scanning) {
+            return "Scanning for nearby access points.";
+        }
+        return "Known and nearby networks are listed below.";
+    }
+
+    function modeChipText() {
+        return Services.NetworkService.networkMode === 0 ? "Wireless" : "Ethernet";
     }
 
     onDashboardActiveChanged: {
@@ -59,6 +76,71 @@ Components.Card {
     }
 
     pinnedContent: [
+        Column {
+            width: parent.width
+            spacing: ThemeModule.Theme.spacingSmall
+
+            Row {
+                width: parent.width
+                spacing: ThemeModule.Theme.spacingMedium
+
+                Components.ModeSlider {
+                    leftLabel: "Wireless"
+                    rightLabel: "Ethernet"
+                    selectedIndex: Services.NetworkService.networkMode
+                    activeColor: ThemeModule.Theme.sky
+                    onChanged: function(index) {
+                        Services.NetworkService.networkMode = index;
+                    }
+                }
+
+                Flow {
+                    width: parent.width - 132 - ThemeModule.Theme.spacingMedium
+                    spacing: ThemeModule.Theme.spacingSmall
+
+                    Components.InlineActionChip {
+                        visible: Services.NetworkService.networkMode === 0
+                        text: Services.NetworkService.wifiOn ? "Turn Wi-Fi off" : "Turn Wi-Fi on"
+                        tone: Services.NetworkService.wifiOn ? "info" : "neutral"
+                        onActivated: Services.NetworkService.setWifiEnabled(!Services.NetworkService.wifiOn)
+                    }
+
+                    Components.InlineActionChip {
+                        visible: Services.NetworkService.networkMode === 0
+                        text: Services.NetworkService.scanning ? "Scanning" : "Scan"
+                        tone: Services.NetworkService.scanning ? "warning" : "info"
+                        enabled: Services.NetworkService.wifiOn && !Services.NetworkService.scanning
+                        onActivated: Services.NetworkService.startScan()
+                    }
+                }
+            }
+
+            Text {
+                width: parent.width
+                text: root.connectionHeadline()
+                font.pixelSize: ThemeModule.Theme.fontSizeLarge
+                font.family: ThemeModule.Theme.fontFamily
+                font.bold: true
+                color: ThemeModule.Theme.text
+                elide: Text.ElideRight
+            }
+
+            Text {
+                width: parent.width
+                text: root.connectionSubtitle()
+                wrapMode: Text.WordWrap
+                font.pixelSize: ThemeModule.Theme.fontSizeSmall
+                font.family: ThemeModule.Theme.fontFamily
+                color: ThemeModule.Theme.subtext
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.14)
+            }
+        },
+
         // ── Connected WiFi row ──────────────────
         Components.DeviceRow {
             visible: Services.NetworkService.networkMode === 0 && Services.NetworkService.currentConnectedWifi !== null
@@ -132,35 +214,6 @@ Components.Card {
             font.family: ThemeModule.Theme.fontFamily
             color: ThemeModule.Theme.overlay
             anchors.horizontalCenter: parent.horizontalCenter
-        },
-
-        Rectangle {
-            visible: Services.NetworkService.networkMode === 0 && root.collapsed && Services.NetworkService.wifiOn && Services.NetworkService.currentConnectedWifi === null && !Services.NetworkService.connecting
-            width: parent.width
-            height: 30
-            radius: ThemeModule.Theme.borderRadiusSmall
-            color: collapsedScanMouse.containsMouse ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
-            border.width: 1
-            border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.3)
-
-            Text {
-                anchors.centerIn: parent
-                text: "🔍 Scan for networks"
-                font.pixelSize: ThemeModule.Theme.fontSizeSmall
-                font.family: ThemeModule.Theme.fontFamily
-                color: ThemeModule.Theme.sky
-            }
-
-            MouseArea {
-                id: collapsedScanMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    root.collapsed = false;
-                    Services.NetworkService.startScan();
-                }
-            }
         },
 
         Item {
@@ -349,7 +402,7 @@ Components.Card {
 
             Text {
                 anchors.centerIn: parent
-                text: Services.NetworkService.scanning ? "⏳ Scanning..." : "🔍 Scan for networks"
+                text: Services.NetworkService.scanning ? "⏳ Refreshing the airwaves..." : "🔍 Refresh nearby networks"
                 font.pixelSize: ThemeModule.Theme.fontSizeSmall
                 font.family: ThemeModule.Theme.fontFamily
                 color: Services.NetworkService.wifiOn ? ThemeModule.Theme.sky : ThemeModule.Theme.overlay

@@ -36,7 +36,7 @@ Components.Card {
                     hoverEnabled: true
                     ToolTip.visible: containsMouse
                     ToolTip.text: modelData
-                    ToolTip.delay: 500
+                    ToolTip.delay: 150
                     onClicked: {
                         ThemeModule.Theme.paletteName = modelData;
                     }

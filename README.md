@@ -13,7 +13,8 @@ If you're looking for ideas or a starting point for your own setup, feel free to
 
 ## What it does
 
-- 🕐 **Clock** — time & date
+- 🕐 **Clock** — time, date, and an integrated focus timer
+- 🗂 **Capture Pad** — merged scratchpad + clipboard history with quick recopy
 - 🎵 **Now Playing** — media controls with album art via MPRIS
 - 🔊 **Audio** — volume, mute, output switching
 - ☀ **Brightness** — screen brightness + Night Light toggle (hides itself if there's no backlight)
@@ -23,6 +24,7 @@ If you're looking for ideas or a starting point for your own setup, feel free to
 - ⌨ **Keyboard** — layout switcher (Hyprland only)
 - 📅 **Calendar** — month grid
 - 🔋 **Battery** — percentage, state, time remaining (hides on desktop)
+- 🚀 **Quick Launcher** — configurable app and command launcher
 - ▫ **System Tray** — StatusNotifierItem icons
 
 ## Requirements
@@ -34,6 +36,8 @@ Optional but worth having:
 - **Hyprland** — needed for the keyboard layout switcher; also what I use as my compositor
 - **brightnessctl** — needed to change brightness from the brightness widget
 - **hyprsunset** — needed for the Night Light toggle in the brightness widget
+- **cliphist** — needed for clipboard history inside Capture Pad
+- **gtk-launch** — needed if you want launcher entries that use desktop ids
 
 ## Running it
 
@@ -72,11 +76,18 @@ The main options:
 {
     "colorScheme": "catppuccin-mocha",
     "audioQuickSwitch": ["Speakers", "Headphones"],
+    "quickCommands": [
+        { "label": "Terminal", "icon": "", "command": ["kitty"] },
+        { "label": "Browser", "icon": "🌐", "desktop": "firefox" },
+        { "label": "Reload Waybar", "icon": "↻", "shell": "pkill -USR2 waybar", "closeOnLaunch": false }
+    ],
     "keyboardLayouts": ["us", "br"],
     "topAnchor": ["clock"],
     "bottomAnchor": ["systemTray", "calendar"],
     "middleDefault": ["notificationCenter", "batteryStatus"],
     "sidebar": [
+        { "widget": "capturePad", "icon": "🗂" },
+        { "widget": "quickCommands", "icon": "🚀" },
         { "widget": "networkPanel",    "icon": "📶" },
         { "widget": "bluetoothPanel",  "icon": "🔵" },
         { "widget": "audioControl",    "icon": "🔊" },
@@ -90,6 +101,8 @@ The main options:
 
 You can also set `windowWidth` and `windowHeight` to override the default 420×900 size.
 
+QuickDash now hides unsupported widgets automatically. If the machine has no battery, no Bluetooth controller, no usable backlight control, or no second monitor, those widgets disappear from the layout and the sidebar instead of showing dead UI.
+
 ### Audio quick switch
 
 `audioQuickSwitch` does two things: the ⇄ button cycles through those devices in order, and the sink list only shows devices whose name contains one of those strings. Leave it empty to show everything.
@@ -98,6 +111,46 @@ To find your sink names:
 
 ```bash
 pactl list sinks | grep "Description:"
+```
+
+### Quick launcher
+
+Launcher entries live under `quickCommands`.
+
+- Use `command` with an array for direct process execution.
+- Use `shell` when you explicitly want a shell snippet.
+- Use `desktop` for a desktop id launched with `gtk-launch`.
+- Optional per-entry fields: `closeOnLaunch`, `workingDirectory`, `environment`, `clearEnvironment`.
+
+Example:
+
+```json
+{
+    "quickCommands": [
+        {
+            "label": "Terminal",
+            "icon": "",
+            "command": ["kitty"]
+        },
+        {
+            "label": "Projects",
+            "icon": "🧰",
+            "command": ["code", "."],
+            "workingDirectory": "/home/victor/projects"
+        },
+        {
+            "label": "Browser",
+            "icon": "🌐",
+            "desktop": "firefox"
+        },
+        {
+            "label": "Reload Waybar",
+            "icon": "↻",
+            "shell": "pkill -USR2 waybar",
+            "closeOnLaunch": false
+        }
+    ]
+}
 ```
 
 ### Layout Zones
@@ -113,8 +166,10 @@ Available widget names:
 
 | Name | Widget |
 |------|--------|
+| `capturePad` | Notes + clipboard history |
 | `clock` | Clock |
 | `nowPlaying` | Media player (Auto-appears via MiniPlayer when active) |
+| `quickCommands` | Quick launcher |
 | `audioControl` | Volume (output) |
 | `audioInputControl` | Volume (input/mic) |
 | `brightnessControl` | Brightness |
@@ -125,6 +180,9 @@ Available widget names:
 | `keyboardLayout` | Keyboard layout |
 | `calendar` | Calendar |
 | `batteryStatus` | Battery |
+| `configPanel` | Theme picker |
+| `systemMonitor` | CPU, memory, and thermal stats |
+| `powerMenu` | Power actions |
 | `systemTray` | System tray |
 
 ## Color schemes
@@ -156,9 +214,11 @@ quickdash/
 │   └── qmldir
 ├── services/              # Logic and system interactions
 │   ├── AudioService.qml
+│   ├── ClipboardService.qml
 │   ├── NetworkService.qml
 │   ├── BluetoothService.qml
 │   ├── DisplayService.qml
+│   ├── FeatureSupport.qml
 │   ├── SystemState.qml
 │   ├── ProcUtils.qml
 │   └── qmldir
@@ -171,9 +231,11 @@ quickdash/
 │   ├── PanelHeader.qml
 │   └── qmldir
 └── widgets/               # Functional dashboard modules
+    ├── CapturePad.qml
     ├── Clock.qml
     ├── MiniPlayer.qml
     ├── NowPlaying.qml
+    ├── QuickCommands.qml
     ├── AudioControl.qml
     ├── BrightnessControl.qml
     ├── DisplayControl.qml

@@ -88,8 +88,8 @@ QtObject {
     readonly property int animDurationSlow: 350
 
     // ── Layout ──────────────────────────────────────────────
-    readonly property int sidebarWidth:       52
-    readonly property int sidebarIconSize:    48
+    readonly property int sidebarWidth:       60
+    readonly property int sidebarIconSize:    52
     readonly property int miniPlayerHeight:   40
     readonly property int separatorThickness: 1
     readonly property color separator:        Qt.rgba(overlay.r, overlay.g, overlay.b, 0.15)

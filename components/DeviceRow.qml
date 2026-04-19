@@ -38,10 +38,6 @@ Rectangle {
     border.color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.16)
     implicitHeight: headRow.implicitHeight + (expanded ? expandedColumn.implicitHeight + ThemeModule.Theme.spacingSmall : 0) + ThemeModule.Theme.spacingSmall * 2
 
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-
     MouseArea {
         id: rowMouse
         anchors.fill: parent

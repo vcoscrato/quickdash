@@ -4,19 +4,16 @@
         { "label": "Vacation", "date": "2026-05-20" }
     ],
     "quickCommands": [
-        { "label": "Terminal", "icon": "", "cmd": "kitty" },
-        { "label": "Files", "icon": "📁", "cmd": "thunar" },
-        { "label": "Browser", "icon": "🌐", "cmd": "firefox" }
+        { "label": "Terminal", "icon": "", "command": ["kitty"] },
+        { "label": "Files", "icon": "📁", "desktop": "thunar" },
+        { "label": "Browser", "icon": "🌐", "desktop": "firefox" }
     ],
     "topAnchor": ["clock"],
     "bottomAnchor": ["systemTray", "calendar"],
     "middleDefault": ["dailyFocus", "weatherStrip", "countdowns", "notificationCenter", "randomQuote"],
     "sidebar": [
         { "widget": "configPanel", "icon": "⚙" },
-        { "widget": "clipboardHistory", "icon": "📋" },
-        { "widget": "scratchpad", "icon": "📝" },
-        { "widget": "quickTimer", "icon": "⏱" },
-        { "widget": "screenshotControls", "icon": "📸" },
+        { "widget": "capturePad", "icon": "🗂" },
         { "widget": "quickCommands", "icon": "🚀" },
         { "widget": "networkPanel",    "icon": "📶" },
         { "widget": "bluetoothPanel",  "icon": "🔵" },

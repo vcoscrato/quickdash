@@ -8,3 +8,4 @@ singleton DisplayService 1.0 DisplayService.qml
 singleton SystemMonitorService 1.0 SystemMonitorService.qml
 singleton WeatherService 1.0 WeatherService.qml
 singleton ClipboardService 1.0 ClipboardService.qml
+singleton FeatureSupport 1.0 FeatureSupport.qml

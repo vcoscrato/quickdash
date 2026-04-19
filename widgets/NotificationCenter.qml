@@ -66,10 +66,6 @@ Components.Card {
                     radius: ThemeModule.Theme.borderRadiusSmall
                     color: notifMouse.containsMouse ? ThemeModule.Theme.cardHover : Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.3)
 
-                    Behavior on color {
-                        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-                    }
-
                     Column {
                         id: notifContent
                         anchors {

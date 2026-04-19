@@ -206,8 +206,7 @@ Components.Card {
         }
     }
 
-    // Hide only when there is no backlight device on the system.
-    visible: root.hasBacklightDevice
+    visible: root.canControlBrightness
 
     Column {
         width: parent.width

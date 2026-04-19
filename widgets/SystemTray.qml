@@ -24,10 +24,6 @@ Components.Card {
                 radius: ThemeModule.Theme.borderRadiusSmall
                 color: trayMouse.containsMouse ? ThemeModule.Theme.cardHover : "transparent"
 
-                Behavior on color {
-                    ColorAnimation { duration: ThemeModule.Theme.animDuration }
-                }
-
                 Image {
                     anchors.centerIn: parent
                     width: 20
@@ -66,7 +62,7 @@ Components.Card {
                 ToolTip {
                     visible: trayMouse.containsMouse
                     text: modelData.tooltipTitle || modelData.title || modelData.id || ""
-                    delay: 500
+                    delay: 150
                 }
 
                 // Menu anchor for context menus

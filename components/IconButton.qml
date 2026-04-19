@@ -22,10 +22,6 @@ Rectangle {
         ? (mouseArea.pressed ? ThemeModule.Theme.surface2 : root.hoverColor)
         : "transparent"
 
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-
     Text {
         anchors.centerIn: parent
         anchors.horizontalCenterOffset: root.iconXOffset

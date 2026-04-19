@@ -42,10 +42,7 @@ Rectangle {
             "countdowns":         "../widgets/Countdowns.qml",
             "randomQuote":        "../widgets/RandomQuote.qml",
             "configPanel":        "../widgets/ConfigPanel.qml",
-            "clipboardHistory":   "../widgets/ClipboardHistory.qml",
-            "scratchpad":         "../widgets/Scratchpad.qml",
-            "quickTimer":         "../widgets/QuickTimer.qml",
-            "screenshotControls": "../widgets/ScreenshotControls.qml",
+            "capturePad":         "../widgets/CapturePad.qml",
             "quickCommands":      "../widgets/QuickCommands.qml",
             "systemMonitor":      "../widgets/SystemMonitor.qml",
             "powerMenu":          "../widgets/PowerMenu.qml",
@@ -64,6 +61,20 @@ Rectangle {
             "systemTray":         "../widgets/SystemTray.qml"
         };
         return map[name] || "";
+    }
+
+    function isWidgetSupported(name) {
+        if (name === "batteryStatus") return Services.FeatureSupport.supportsBattery;
+        if (name === "brightnessControl") return Services.FeatureSupport.supportsBrightness;
+        if (name === "bluetoothPanel") return Services.FeatureSupport.supportsBluetooth;
+        if (name === "displayControl") return Services.FeatureSupport.supportsDisplayControl;
+        if (name === "keyboardLayout") {
+            return Services.FeatureSupport.supportsHyprland
+                && dashboard.config
+                && dashboard.config.keyboardLayouts
+                && dashboard.config.keyboardLayouts.length > 1;
+        }
+        return true;
     }
 
     function getMicroStatus(widget) {
@@ -105,7 +116,9 @@ Rectangle {
                 Repeater {
                     model: dashboard.sidebarItems.filter(function(i) {
                         var wName = typeof i === "string" ? i : i.widget;
-                        return wName !== "configPanel" && wName !== "powerMenu";
+                        return wName !== "configPanel"
+                            && wName !== "powerMenu"
+                            && dashboard.isWidgetSupported(wName);
                     })
                     delegate: Components.SidebarIcon {
                         required property var modelData
@@ -149,7 +162,8 @@ Rectangle {
                 Repeater {
                     model: dashboard.sidebarItems.filter(function(i) {
                         var wName = typeof i === "string" ? i : i.widget;
-                        return wName === "configPanel" || wName === "powerMenu";
+                        return (wName === "configPanel" || wName === "powerMenu")
+                            && dashboard.isWidgetSupported(wName);
                     })
                     delegate: Components.SidebarIcon {
                         required property var modelData
@@ -199,7 +213,7 @@ Rectangle {
                     delegate: Loader {
                         required property string modelData
                         width: parent.width
-                        active: dashboard.widgetSource(modelData) !== ""
+                        active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
                         source: dashboard.widgetSource(modelData)
                         onLoaded: {
                             if (item && "dashboardActive" in item) {
@@ -266,7 +280,7 @@ Rectangle {
                             delegate: Loader {
                                 required property string modelData
                                 width: parent.width
-                                active: dashboard.widgetSource(modelData) !== ""
+                                active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
                                 source: dashboard.widgetSource(modelData)
                                 onLoaded: {
                                     if (item && "dashboardActive" in item) {
@@ -294,8 +308,10 @@ Rectangle {
                         Loader {
                             id: activePanelLoader
                             width: parent.width
-                            active: dashboard.activePanel !== ""
-                            source: dashboard.activePanel !== "" ? dashboard.widgetSource(dashboard.activePanel) : ""
+                            active: dashboard.activePanel !== "" && dashboard.isWidgetSupported(dashboard.activePanel)
+                            source: dashboard.activePanel !== "" && dashboard.isWidgetSupported(dashboard.activePanel)
+                                ? dashboard.widgetSource(dashboard.activePanel)
+                                : ""
                             
                             onLoaded: {
                                 if (!item) return;
@@ -315,19 +331,6 @@ Rectangle {
                                 if (dashboard.activePanel === "keyboardLayout") item.keyboardLayouts = dashboard.config.keyboardLayouts || ["us"];
                             }
                         }
-                        
-                        // Close button overlay for the panel
-                        Components.IconButton {
-                            iconText: "✕"
-                            iconSize: 12
-                            size: 24
-                            iconColor: ThemeModule.Theme.overlay
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.margins: ThemeModule.Theme.spacingMedium
-                            z: 100
-                            onClicked: dashboard.activePanel = ""
-                        }
                     }
                 }
             }
@@ -344,7 +347,7 @@ Rectangle {
                     delegate: Loader {
                         required property string modelData
                         width: parent.width
-                        active: dashboard.widgetSource(modelData) !== ""
+                        active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
                         source: dashboard.widgetSource(modelData)
                         onLoaded: {
                             if (item && "dashboardActive" in item) {

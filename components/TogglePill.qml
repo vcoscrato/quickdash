@@ -22,13 +22,6 @@ Rectangle {
         ? activeColor
         : Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.2)
 
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-    Behavior on border.color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-
     Row {
         id: pillRow
         anchors.centerIn: parent
@@ -40,10 +33,6 @@ Rectangle {
             color: root.checked ? root.activeColor : ThemeModule.Theme.subtext
             anchors.verticalCenter: parent.verticalCenter
             visible: root.iconText !== ""
-
-            Behavior on color {
-                ColorAnimation { duration: ThemeModule.Theme.animDuration }
-            }
         }
 
         Text {
@@ -53,10 +42,6 @@ Rectangle {
             font.bold: true
             color: root.checked ? root.activeColor : ThemeModule.Theme.subtext
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: ThemeModule.Theme.animDuration }
-            }
         }
     }
 

@@ -9,6 +9,7 @@ Components.Card {
     title: "Bluetooth"
     icon: "🔵"
     collapsible: true
+    visible: Services.FeatureSupport.supportsBluetooth
     property bool dashboardActive: true
 
     headerActions: Components.ModeSlider {
