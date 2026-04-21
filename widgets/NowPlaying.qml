@@ -55,32 +55,24 @@ Components.Card {
     // otherwise show a "waiting" message so user can see the widget is alive
     visible: true
 
-    // ── No player fallback ───────────────────
-    Column {
+    // ── No player fallback — compact one-liner ──
+    Row {
         width: parent.width
         spacing: ThemeModule.Theme.spacingSmall
         visible: !root.hasPlayer
 
         Text {
             text: "🎵"
-            font.pixelSize: 24
-            anchors.horizontalCenter: parent.horizontalCenter
+            font.pixelSize: ThemeModule.Theme.fontSizeNormal
             opacity: 0.5
+            anchors.verticalCenter: parent.verticalCenter
         }
         Text {
             text: "No media playing"
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily
             color: ThemeModule.Theme.overlay
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-        Text {
-            text: "Play something in a browser or media player"
-            font.pixelSize: 10
-            font.family: ThemeModule.Theme.fontFamily
-            color: ThemeModule.Theme.overlay
-            anchors.horizontalCenter: parent.horizontalCenter
-            opacity: 0.6
+            anchors.verticalCenter: parent.verticalCenter
         }
     }
 

@@ -1,3 +1,4 @@
+pragma Singleton
 // ProcUtils — Process lifecycle helpers
 //
 // Provides simple start()/stop() wrappers for Process objects.
@@ -5,7 +6,7 @@
 // running, or stopping one that has already finished, which can
 // trigger warnings in QuickShell.
 
-pragma Singleton
+
 
 import QtQuick
 

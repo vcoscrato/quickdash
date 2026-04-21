@@ -3,12 +3,14 @@ import QtQuick
 import Quickshell.Io
 import Quickshell.Hyprland
 import "../components" as Components
+import "../services" as Services
 import "../theme" as ThemeModule
 
 Components.Card {
     id: root
     title: "Keyboard"
     icon: "⌨"
+    visible: Services.FeatureSupport.supportsHyprland && root.keyboardLayouts && root.keyboardLayouts.length > 1
 
     property var keyboardLayouts: ["us"]
     property int currentLayoutIndex: 0
@@ -125,10 +127,6 @@ Components.Card {
                 height: 32
                 radius: ThemeModule.Theme.borderRadiusSmall
                 color: kbMouse.containsMouse ? ThemeModule.Theme.cardHover : "transparent"
-
-                Behavior on color {
-                    ColorAnimation { duration: ThemeModule.Theme.animDuration }
-                }
 
                 Row {
                     anchors.verticalCenter: parent.verticalCenter

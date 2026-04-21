@@ -8,6 +8,7 @@ Components.Card {
     id: root
     title: "Displays"
     icon: "🖥"
+    visible: Services.FeatureSupport.supportsDisplayControl
 
     property bool dashboardActive: true
 
@@ -37,6 +38,17 @@ Components.Card {
             spacing: ThemeModule.Theme.spacingMedium
 
             Text {
+                visible: Services.DisplayService.applying
+                text: "⏳ Applying display changes..."
+                font.pixelSize: ThemeModule.Theme.fontSizeSmall
+                font.family: ThemeModule.Theme.fontFamily
+                color: ThemeModule.Theme.accent
+                width: parent.width
+                font.italic: true
+            }
+
+            Text {
+                visible: !Services.DisplayService.applying
                 text: !Services.DisplayService.hasMultipleMonitors
                     ? "Only one display is connected."
                     : (Services.DisplayService.isMirrored 

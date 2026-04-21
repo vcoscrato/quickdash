@@ -11,15 +11,49 @@ Components.Card {
     collapsible: true
     property bool dashboardActive: true
 
-    headerActions: Components.ModeSlider {
-        leftLabel: "WiFi"
-        rightLabel: "Ethernet"
-        selectedIndex: Services.NetworkService.networkMode
-        activeColor: ThemeModule.Theme.sky
-        onChanged: function(index) {
-            Services.NetworkService.networkMode = index;
-            Services.NetworkService.setWifiEnabled(index === 0);
+    function connectionHeadline() {
+        if (Services.NetworkService.networkMode === 1) {
+            return Services.NetworkService.wiredConnected
+                ? (Services.NetworkService.wiredConnectionName || "Ethernet connected")
+                : "Ethernet idle";
         }
+
+        if (!Services.NetworkService.wifiOn) {
+            return "Wi-Fi radio is off";
+        }
+        if (Services.NetworkService.connecting) {
+            return "Joining " + Services.NetworkService.connectingSsid;
+        }
+        if (Services.NetworkService.currentConnectedWifi) {
+            return Services.NetworkService.currentConnectedWifi.ssid;
+        }
+        return "Wireless standby";
+    }
+
+    function connectionSubtitle() {
+        if (Services.NetworkService.networkMode === 1) {
+            return Services.NetworkService.wiredConnected
+                ? ((Services.NetworkService.wiredIp && Services.NetworkService.wiredIp !== "") ? "IP " + Services.NetworkService.wiredIp : "Cable link active")
+                : "Switch to Wi-Fi or plug in a cable.";
+        }
+
+        if (!Services.NetworkService.wifiOn) {
+            return "Turn it on here when you want to scan or reconnect.";
+        }
+        if (Services.NetworkService.connecting) {
+            return "NetworkManager is negotiating the connection.";
+        }
+        if (Services.NetworkService.currentConnectedWifi) {
+            return Services.NetworkService.connectedWifiSubtitle(Services.NetworkService.currentConnectedWifi);
+        }
+        if (Services.NetworkService.scanning) {
+            return "Scanning for nearby access points.";
+        }
+        return "Known and nearby networks are listed below.";
+    }
+
+    function modeChipText() {
+        return Services.NetworkService.networkMode === 0 ? "Wireless" : "Ethernet";
     }
 
     onDashboardActiveChanged: {
@@ -42,6 +76,72 @@ Components.Card {
     }
 
     pinnedContent: [
+        Column {
+            width: parent.width
+            spacing: ThemeModule.Theme.spacingSmall
+
+            Row {
+                width: parent.width
+                spacing: ThemeModule.Theme.spacingMedium
+
+                Components.ModeSlider {
+                    leftLabel: "Wireless"
+                    rightLabel: "Ethernet"
+                    selectedIndex: Services.NetworkService.networkMode
+                    activeColor: ThemeModule.Theme.sky
+                    onChanged: function(index) {
+                        Services.NetworkService.networkMode = index;
+                    }
+                }
+
+                Flow {
+                    width: parent.width - 132 - ThemeModule.Theme.spacingMedium
+                    spacing: ThemeModule.Theme.spacingSmall
+
+                    Components.InlineActionChip {
+                        visible: Services.NetworkService.networkMode === 0
+                        text: Services.NetworkService.wifiOn ? "Turn Wi-Fi off" : "Turn Wi-Fi on"
+                        tone: Services.NetworkService.wifiOn ? "info" : "neutral"
+                        onActivated: Services.NetworkService.setWifiEnabled(!Services.NetworkService.wifiOn)
+                    }
+
+                    Components.InlineActionChip {
+                        visible: Services.NetworkService.networkMode === 0
+                        text: Services.NetworkService.scanning ? "Scanning" : "Scan"
+                        tone: Services.NetworkService.scanning ? "warning" : "info"
+                        enabled: Services.NetworkService.wifiOn && !Services.NetworkService.scanning
+                        onActivated: Services.NetworkService.startScan()
+                    }
+                }
+            }
+
+            Text {
+                width: parent.width
+                text: root.connectionHeadline()
+                font.pixelSize: ThemeModule.Theme.fontSizeLarge
+                font.family: ThemeModule.Theme.fontFamily
+                font.bold: true
+                color: ThemeModule.Theme.text
+                elide: Text.ElideRight
+            }
+
+            Text {
+                width: parent.width
+                text: root.connectionSubtitle()
+                wrapMode: Text.WordWrap
+                font.pixelSize: ThemeModule.Theme.fontSizeSmall
+                font.family: ThemeModule.Theme.fontFamily
+                color: ThemeModule.Theme.subtext
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.14)
+            }
+        },
+
+        // ── Connected WiFi row ──────────────────
         Components.DeviceRow {
             visible: Services.NetworkService.networkMode === 0 && Services.NetworkService.currentConnectedWifi !== null
             width: parent.width
@@ -63,44 +163,57 @@ Components.Card {
             }
         },
 
+        // ── Connecting indicator ────────────────
+        Rectangle {
+            visible: Services.NetworkService.networkMode === 0
+                && Services.NetworkService.connecting
+                && Services.NetworkService.currentConnectedWifi === null
+            width: parent.width
+            height: 36
+            radius: ThemeModule.Theme.borderRadiusSmall
+            color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.1)
+            border.width: 1
+            border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.3)
+
+            Row {
+                anchors.centerIn: parent
+                spacing: ThemeModule.Theme.spacingSmall
+
+                Text {
+                    text: "⟳"
+                    font.pixelSize: ThemeModule.Theme.fontSizeNormal
+                    color: ThemeModule.Theme.sky
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    RotationAnimator on rotation {
+                        from: 0
+                        to: 360
+                        duration: 1200
+                        loops: Animation.Infinite
+                        running: Services.NetworkService.connecting
+                    }
+                }
+
+                Text {
+                    text: "Connecting to " + Services.NetworkService.connectingSsid + "..."
+                    font.pixelSize: ThemeModule.Theme.fontSizeSmall
+                    font.family: ThemeModule.Theme.fontFamily
+                    color: ThemeModule.Theme.sky
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+        },
+
         Text {
             visible: Services.NetworkService.networkMode === 0
                 && Services.NetworkService.currentConnectedWifi === null
+                && !Services.NetworkService.connecting
                 && (!root.collapsed || !Services.NetworkService.wifiOn)
             text: Services.NetworkService.wifiOn ? "WiFi not connected" : "WiFi is off"
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily
             color: ThemeModule.Theme.overlay
             anchors.horizontalCenter: parent.horizontalCenter
-        },
-
-        Rectangle {
-            visible: Services.NetworkService.networkMode === 0 && root.collapsed && Services.NetworkService.wifiOn && Services.NetworkService.currentConnectedWifi === null
-            width: parent.width
-            height: 30
-            radius: ThemeModule.Theme.borderRadiusSmall
-            color: collapsedScanMouse.containsMouse ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
-            border.width: 1
-            border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.3)
-
-            Text {
-                anchors.centerIn: parent
-                text: "🔍 Scan for networks"
-                font.pixelSize: ThemeModule.Theme.fontSizeSmall
-                font.family: ThemeModule.Theme.fontFamily
-                color: ThemeModule.Theme.sky
-            }
-
-            MouseArea {
-                id: collapsedScanMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    root.collapsed = false;
-                    Services.NetworkService.startScan();
-                }
-            }
         },
 
         Item {
@@ -126,12 +239,18 @@ Components.Card {
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.ssid
-                subtitle: modelData.signal + "%"
+                subtitle: {
+                    if (Services.NetworkService.connecting && Services.NetworkService.connectingSsid === modelData.ssid)
+                        return "Connecting...";
+                    return modelData.signal + "%";
+                }
                 signalLevel: modelData.signal
                 showLock: modelData.secure
                 leadingIcon: ""
                 badges: []
                 expanded: Services.NetworkService.passwordRowSsid === modelData.ssid
+                primaryEnabled: !Services.NetworkService.connecting
+                opacity: Services.NetworkService.connecting && Services.NetworkService.connectingSsid !== modelData.ssid ? 0.5 : 1.0
                 actionChips: [
                     Services.NetworkService.autoconnectChipForRow(modelData),
                     {
@@ -155,6 +274,10 @@ Components.Card {
                     font.family: ThemeModule.Theme.fontFamily
                     color: ThemeModule.Theme.error
                 }
+
+                Behavior on opacity {
+                    NumberAnimation { duration: ThemeModule.Theme.animDuration }
+                }
             }
         }
 
@@ -168,14 +291,21 @@ Components.Card {
         Repeater {
             model: Services.NetworkService.networkMode === 0 ? Services.NetworkService.availableRows : []
             delegate: Components.DeviceRow {
+                id: availableDelegate
                 width: parent.width
                 title: modelData.ssid
-                subtitle: modelData.signal + "%"
+                subtitle: {
+                    if (Services.NetworkService.connecting && Services.NetworkService.connectingSsid === modelData.ssid)
+                        return "Connecting...";
+                    return modelData.signal + "%";
+                }
                 signalLevel: modelData.signal
                 showLock: modelData.secure
                 leadingIcon: ""
                 badges: []
                 expanded: Services.NetworkService.passwordRowSsid === modelData.ssid
+                primaryEnabled: !Services.NetworkService.connecting
+                opacity: Services.NetworkService.connecting && Services.NetworkService.connectingSsid !== modelData.ssid ? 0.5 : 1.0
                 onPrimaryTriggered: Services.NetworkService.onRowPrimary(modelData)
 
                 Rectangle {
@@ -188,6 +318,7 @@ Components.Card {
                     border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.5)
 
                     TextInput {
+                        id: passwordInput
                         anchors.fill: parent
                         anchors.margins: ThemeModule.Theme.spacingSmall
                         text: Services.NetworkService.passwordText
@@ -199,6 +330,18 @@ Components.Card {
                         onAccepted: Services.NetworkService.requestConnect(modelData, Services.NetworkService.passwordText)
                         Keys.onReturnPressed: Services.NetworkService.requestConnect(modelData, Services.NetworkService.passwordText)
                         Keys.onEnterPressed: Services.NetworkService.requestConnect(modelData, Services.NetworkService.passwordText)
+
+                        // Auto-focus when password field becomes visible
+                        Component.onCompleted: {
+                            if (Services.NetworkService.passwordRowSsid === modelData.ssid)
+                                passwordInput.forceActiveFocus();
+                        }
+                    }
+
+                    // Watch for visibility changes to auto-focus
+                    onVisibleChanged: {
+                        if (visible)
+                            passwordInput.forceActiveFocus();
                     }
                 }
 
@@ -226,6 +369,10 @@ Components.Card {
                     font.family: ThemeModule.Theme.fontFamily
                     color: ThemeModule.Theme.error
                 }
+
+                Behavior on opacity {
+                    NumberAnimation { duration: ThemeModule.Theme.animDuration }
+                }
             }
         }
 
@@ -238,18 +385,24 @@ Components.Card {
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
+        // ── Scan button with proper disabled styling ──
         Rectangle {
             visible: Services.NetworkService.networkMode === 0
             width: parent.width
             height: 32
             radius: ThemeModule.Theme.borderRadiusSmall
-            color: scanMouse.containsMouse ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
+            color: scanMouse.containsMouse && scanMouse.enabled ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
             border.width: 1
             border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.3)
+            opacity: (Services.NetworkService.wifiOn && !Services.NetworkService.scanning) ? 1.0 : 0.5
+
+            Behavior on opacity {
+                NumberAnimation { duration: ThemeModule.Theme.animDuration }
+            }
 
             Text {
                 anchors.centerIn: parent
-                text: Services.NetworkService.scanning ? "⏳ Scanning..." : "🔍 Scan for networks"
+                text: Services.NetworkService.scanning ? "⏳ Refreshing the airwaves..." : "🔍 Refresh nearby networks"
                 font.pixelSize: ThemeModule.Theme.fontSizeSmall
                 font.family: ThemeModule.Theme.fontFamily
                 color: Services.NetworkService.wifiOn ? ThemeModule.Theme.sky : ThemeModule.Theme.overlay
@@ -259,7 +412,7 @@ Components.Card {
                 id: scanMouse
                 anchors.fill: parent
                 hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 enabled: Services.NetworkService.wifiOn && !Services.NetworkService.scanning
                 onClicked: {
                     Services.NetworkService.startScan();

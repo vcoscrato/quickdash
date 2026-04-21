@@ -1,0 +1,23 @@
+module widgets
+AudioControl 1.0 AudioControl.qml
+AudioInputControl 1.0 AudioInputControl.qml
+AudioSliderCard 1.0 AudioSliderCard.qml
+BatteryStatus 1.0 BatteryStatus.qml
+BluetoothPanel 1.0 BluetoothPanel.qml
+BrightnessControl 1.0 BrightnessControl.qml
+Calendar 1.0 Calendar.qml
+CapturePad 1.0 CapturePad.qml
+Clock 1.0 Clock.qml
+ConfigPanel 1.0 ConfigPanel.qml
+DisplayControl 1.0 DisplayControl.qml
+TodoList 1.0 TodoList.qml
+KeyboardLayout 1.0 KeyboardLayout.qml
+MiniPlayer 1.0 MiniPlayer.qml
+NetworkPanel 1.0 NetworkPanel.qml
+NotificationCenter 1.0 NotificationCenter.qml
+NowPlaying 1.0 NowPlaying.qml
+PowerMenu 1.0 PowerMenu.qml
+QuickCommands 1.0 QuickCommands.qml
+RandomQuote 1.0 RandomQuote.qml
+SystemMonitor 1.0 SystemMonitor.qml
+SystemTray 1.0 SystemTray.qml

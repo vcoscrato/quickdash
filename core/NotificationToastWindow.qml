@@ -1,13 +1,20 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Services.Notifications
-import "services" as Services
-import "theme" as ThemeModule
-import "components" as Components
+import "../services" as Services
+import "../theme" as ThemeModule
+import "../components" as Components
 
 PanelWindow {
     id: toastWindow
-    
+
+    // ── Prevent focus stealing from games and other apps ──
+    // Explicitly non-focusable: the toast must never take keyboard focus.
+    focusable: false
+    // Don't reserve exclusive screen space for notifications.
+    exclusionMode: ExclusionMode.Ignore
+
     // Anchor to the top right of the screen
     anchors {
         top: true
@@ -40,7 +47,7 @@ PanelWindow {
                 width: parent.width
                 height: toastContent.height + (ThemeModule.Theme.spacingMedium * 2)
                 radius: ThemeModule.Theme.borderRadius
-                color: ThemeModule.Theme.card
+                color: toastMouse.containsMouse ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
                 border.color: ThemeModule.Theme.cardHover
                 border.width: 1
                 clip: true
@@ -56,6 +63,10 @@ PanelWindow {
                     id: entranceAnim
                     NumberAnimation { target: toastCard; property: "scale"; to: 1.0; duration: ThemeModule.Theme.animDuration; easing.type: Easing.OutBack }
                     NumberAnimation { target: toastCard; property: "opacity"; to: 1.0; duration: ThemeModule.Theme.animDuration }
+                }
+
+                Behavior on color {
+                    ColorAnimation { duration: ThemeModule.Theme.animDuration }
                 }
 
                 Column {
@@ -114,6 +125,17 @@ PanelWindow {
                     size: 24
                     iconSize: 12
                     iconColor: ThemeModule.Theme.overlay
+                    onClicked: {
+                        Services.SystemState.dismissPopup(modelData.popupId)
+                    }
+                }
+
+                // Click anywhere on the toast to dismiss
+                MouseArea {
+                    id: toastMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    z: -1  // Below the dismiss button
                     onClicked: {
                         Services.SystemState.dismissPopup(modelData.popupId)
                     }

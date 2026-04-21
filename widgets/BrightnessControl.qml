@@ -26,18 +26,65 @@ Components.Card {
     property int brightnessPercent: 0
     property int pendingBrightnessPercent: 0
     property bool brightnessCommitQueued: false
-    property bool available: false
+    property bool hasBacklightDevice: false
+    property bool backendCheckComplete: false
+    property bool helperAvailable: false
     property bool nightLightOn: false
+    property string backlightDeviceName: ""
+    property string unavailableReason: ""
 
-    function requestBrightnessRefresh() {
-        if (!root.dashboardActive || brightnessGetProc.running) {
+    readonly property bool canControlBrightness: root.hasBacklightDevice && root.helperAvailable
+    readonly property string brightnessPath: root.backlightDeviceName !== ""
+        ? "/sys/class/backlight/" + root.backlightDeviceName + "/brightness"
+        : ""
+    readonly property string maxBrightnessPath: root.backlightDeviceName !== ""
+        ? "/sys/class/backlight/" + root.backlightDeviceName + "/max_brightness"
+        : ""
+
+    function updateAvailability() {
+        if (!root.hasBacklightDevice) {
+            root.unavailableReason = "";
             return;
         }
-        brightnessGetProc.running = true;
+
+        if (!root.backendCheckComplete) {
+            root.unavailableReason = "Checking brightness backend...";
+            return;
+        }
+
+        root.unavailableReason = root.canControlBrightness
+            ? ""
+            : "Install brightnessctl to enable brightness control.";
+    }
+
+    function updateBrightnessFromFiles() {
+        if (!root.hasBacklightDevice || !brightnessValueFile.loaded || !maxBrightnessValueFile.loaded) {
+            return;
+        }
+
+        var current = parseInt((brightnessValueFile.text() || "").trim(), 10);
+        var max = parseInt((maxBrightnessValueFile.text() || "").trim(), 10);
+        if (isNaN(current) || isNaN(max) || max <= 0) {
+            return;
+        }
+
+        var pct = Math.max(0, Math.min(100, Math.round((current / max) * 100)));
+        root.brightnessPercent = pct;
+        if (!brightnessSetProc.running && !brightnessSetDebounce.running) {
+            root.pendingBrightnessPercent = pct;
+        }
+    }
+
+    function requestBrightnessRefresh() {
+        if (!root.dashboardActive || !root.hasBacklightDevice) {
+            return;
+        }
+        brightnessValueFile.reload();
+        maxBrightnessValueFile.reload();
     }
 
     function commitBrightness() {
-        if (!root.available) {
+        if (!root.canControlBrightness) {
             return;
         }
         if (brightnessSetProc.running) {
@@ -49,39 +96,74 @@ Components.Card {
         brightnessSetProc.running = true;
     }
 
+    Process {
+        id: nightLightStatusProc
+        command: ["pgrep", "hyprsunset"]
+        running: false
+        onExited: function(exitCode) {
+            root.nightLightOn = exitCode === 0;
+        }
+    }
+
     // ── Read current brightness on load ──────
     Component.onCompleted: {
-        if (root.dashboardActive) {
-            root.requestBrightnessRefresh();
+        backlightProbeProc.running = true;
+        helperCheckProc.running = true;
+        nightLightStatusProc.running = true;
+    }
+
+    FileView {
+        id: brightnessValueFile
+        path: root.brightnessPath
+        printErrors: false
+        watchChanges: true
+        onLoaded: root.updateBrightnessFromFiles()
+        onTextChanged: root.updateBrightnessFromFiles()
+        onFileChanged: reload()
+    }
+
+    FileView {
+        id: maxBrightnessValueFile
+        path: root.maxBrightnessPath
+        printErrors: false
+        watchChanges: true
+        onLoaded: root.updateBrightnessFromFiles()
+        onTextChanged: root.updateBrightnessFromFiles()
+        onFileChanged: reload()
+    }
+
+    Process {
+        id: backlightProbeProc
+        command: ["ls", "-1", "/sys/class/backlight"]
+        running: false
+        property string detectedDevice: ""
+        onRunningChanged: if (running) detectedDevice = ""
+        stdout: SplitParser {
+            onRead: function(line) {
+                var trimmed = (line || "").trim();
+                if (trimmed !== "" && backlightProbeProc.detectedDevice === "") {
+                    backlightProbeProc.detectedDevice = trimmed;
+                }
+            }
+        }
+        onExited: {
+            root.backlightDeviceName = backlightProbeProc.detectedDevice;
+            root.hasBacklightDevice = root.backlightDeviceName !== "";
+            root.updateAvailability();
+            if (root.hasBacklightDevice && root.dashboardActive) {
+                root.requestBrightnessRefresh();
+            }
         }
     }
 
     Process {
-        id: brightnessGetProc
-        command: ["brightnessctl", "info", "-m"]
+        id: helperCheckProc
+        command: ["which", "brightnessctl"]
         running: false
-        stdout: SplitParser {
-            onRead: function(line) {
-                // brightnessctl -m format: device,class,current,percent%,max
-                var parts = line.split(",");
-                if (parts.length >= 5) {
-                    var pctStr = (parts[3] || "").replace("%", "").trim();
-                    var pct = parseInt(pctStr);
-                    if (!isNaN(pct) && pct >= 0 && pct <= 100) {
-                        root.brightnessPercent = pct;
-                        if (!brightnessSetProc.running && !brightnessSetDebounce.running) {
-                            root.pendingBrightnessPercent = root.brightnessPercent;
-                        }
-                        root.available = true;
-                    } else {
-                        console.warn("[QuickDash] Unexpected brightnessctl output — could not parse percent from field 4:", parts[3]);
-                        root.available = true;
-                        root.brightnessPercent = 50; // fallback
-                    }
-                } else {
-                    console.warn("[QuickDash] Unexpected brightnessctl -m output format (" + parts.length + " fields, expected 5):", line);
-                }
-            }
+        onExited: function(exitCode) {
+            root.helperAvailable = exitCode === 0;
+            root.backendCheckComplete = true;
+            root.updateAvailability();
         }
     }
 
@@ -124,8 +206,7 @@ Components.Card {
         }
     }
 
-    // Hide if brightnessctl is not available
-    visible: root.available
+    visible: root.canControlBrightness
 
     Column {
         width: parent.width
@@ -135,9 +216,11 @@ Components.Card {
             width: parent.width
             spacing: ThemeModule.Theme.spacingSmall
 
-            Components.IconButton {
-                iconText: root.brightnessPercent <= 30 ? "🔅" : "🔆"
-                size: 32
+            Text {
+                text: root.brightnessPercent <= 30 ? "🔅" : "🔆"
+                font.pixelSize: ThemeModule.Theme.fontSizeLarge
+                width: 32
+                horizontalAlignment: Text.AlignHCenter
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -145,7 +228,12 @@ Components.Card {
                 width: parent.width - 80
                 anchors.verticalCenter: parent.verticalCenter
                 value: root.brightnessPercent
+                enabled: root.canControlBrightness
+                opacity: enabled ? 1.0 : 0.55
                 onMoved: {
+                    if (!enabled) {
+                        return;
+                    }
                     root.pendingBrightnessPercent = Math.round(value);
                     root.brightnessPercent = root.pendingBrightnessPercent;
                     brightnessSetDebounce.restart();
@@ -165,6 +253,16 @@ Components.Card {
                 horizontalAlignment: Text.AlignRight
                 anchors.verticalCenter: parent.verticalCenter
             }
+        }
+
+        Text {
+            visible: root.unavailableReason !== ""
+            text: root.unavailableReason
+            font.pixelSize: ThemeModule.Theme.fontSizeSmall
+            font.family: ThemeModule.Theme.fontFamily
+            color: ThemeModule.Theme.subtext
+            width: parent.width
+            wrapMode: Text.WordWrap
         }
     }
 }

@@ -38,6 +38,9 @@ Singleton {
     property string connectError: ""
     property string connectErrorSsid: ""
 
+    property bool connecting: false
+    property string connectingSsid: ""
+
     property string forgetArmedSsid: ""
 
     // ── Process helpers ────────────────────────────────────
@@ -286,6 +289,8 @@ Singleton {
     function requestConnect(row, password) {
         connectError = "";
         connectErrorSsid = "";
+        connecting = true;
+        connectingSsid = row.ssid;
 
         connectProc.targetSsid = row.ssid;
         connectProc.targetSecure = row.secure;
@@ -592,6 +597,9 @@ Singleton {
         property bool targetKnown: false
         property bool hadPassword: false
         onExited: function(exitCode) {
+            connecting = false;
+            connectingSsid = "";
+
             if (exitCode === 0) {
                 connectError = "";
                 connectErrorSsid = "";

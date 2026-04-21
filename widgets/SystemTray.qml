@@ -7,7 +7,7 @@ import "../theme" as ThemeModule
 
 Components.Card {
     id: root
-    title: "System Tray"
+    title: ""
     icon: ""
 
     Flow {
@@ -23,10 +23,6 @@ Components.Card {
                 height: 36
                 radius: ThemeModule.Theme.borderRadiusSmall
                 color: trayMouse.containsMouse ? ThemeModule.Theme.cardHover : "transparent"
-
-                Behavior on color {
-                    ColorAnimation { duration: ThemeModule.Theme.animDuration }
-                }
 
                 Image {
                     anchors.centerIn: parent
@@ -66,7 +62,7 @@ Components.Card {
                 ToolTip {
                     visible: trayMouse.containsMouse
                     text: modelData.tooltipTitle || modelData.title || modelData.id || ""
-                    delay: 500
+                    delay: 150
                 }
 
                 // Menu anchor for context menus

@@ -13,6 +13,7 @@ Singleton {
     property bool isMirrored: false
     property string primaryMonitor: ""
     property string secondaryMonitor: ""
+    property bool applying: false
 
     // ── Actions ────────────────────────────────────────────
     function refresh() {
@@ -34,6 +35,7 @@ Singleton {
             mirrorProc.command = ["hyprctl", "keyword", "monitor", secondaryId + ",preferred,auto,1"];
         }
         mirrorProc.running = true;
+        root.applying = true;
     }
 
     // ── Processes ──────────────────────────────────────────
@@ -95,6 +97,7 @@ Singleton {
         command: ["hyprctl", "keyword", "monitor", ""]
         running: false
         onExited: {
+            root.applying = false;
             root.refresh();
         }
     }

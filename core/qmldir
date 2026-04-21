@@ -1,0 +1,3 @@
+module core
+Dashboard 1.0 Dashboard.qml
+NotificationToastWindow 1.0 NotificationToastWindow.qml

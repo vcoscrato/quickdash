@@ -23,13 +23,6 @@ Rectangle {
     border.width: ThemeModule.Theme.borderWidth
     border.color: Qt.rgba(toneColor().r, toneColor().g, toneColor().b, armed ? 0.85 : 0.45)
 
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-    Behavior on border.color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-
     Text {
         id: chipText
         anchors.centerIn: parent

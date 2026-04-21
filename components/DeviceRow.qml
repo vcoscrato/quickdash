@@ -38,10 +38,6 @@ Rectangle {
     border.color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.16)
     implicitHeight: headRow.implicitHeight + (expanded ? expandedColumn.implicitHeight + ThemeModule.Theme.spacingSmall : 0) + ThemeModule.Theme.spacingSmall * 2
 
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
-
     MouseArea {
         id: rowMouse
         anchors.fill: parent
@@ -88,7 +84,12 @@ Rectangle {
                 color: ThemeModule.Theme.text
                 anchors.verticalCenter: parent.verticalCenter
                 elide: Text.ElideRight
-                width: Math.max(60, parent.width - subtitleText.width - rightActions.width - 120)
+                // Take remaining space minus what the subtitle and actions need
+                width: Math.max(40, parent.width - subtitleText.implicitWidth - rightActions.implicitWidth
+                    - (root.leadingIcon !== "" ? ThemeModule.Theme.fontSizeLarge + ThemeModule.Theme.spacingSmall : 0)
+                    - (root.signalLevel >= 0 ? 40 : 0)
+                    - (root.showLock ? ThemeModule.Theme.fontSizeSmall + ThemeModule.Theme.spacingSmall : 0)
+                    - ThemeModule.Theme.spacingSmall * 4)
             }
 
             Text {

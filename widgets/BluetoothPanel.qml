@@ -9,6 +9,7 @@ Components.Card {
     title: "Bluetooth"
     icon: "🔵"
     collapsible: true
+    visible: Services.FeatureSupport.supportsBluetooth
     property bool dashboardActive: true
 
     headerActions: Components.ModeSlider {
@@ -31,6 +32,20 @@ Components.Card {
             Services.BluetoothService.refreshAll(true);
     }
 
+    // Helper to build subtitle with connecting/disconnecting status
+    function deviceSubtitle(row) {
+        if (Services.BluetoothService.connectingMac === row.mac) return "Connecting...";
+        if (Services.BluetoothService.disconnectingMac === row.mac) return "Disconnecting...";
+        return "";
+    }
+
+    function deviceOpacity(row) {
+        var busy = Services.BluetoothService.connectingMac !== "" || Services.BluetoothService.disconnectingMac !== "";
+        if (!busy) return 1.0;
+        if (Services.BluetoothService.connectingMac === row.mac || Services.BluetoothService.disconnectingMac === row.mac) return 1.0;
+        return 0.5;
+    }
+
     pinnedContent: [
         Components.DeviceSection {
             visible: Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length > 0
@@ -44,10 +59,16 @@ Components.Card {
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.name
-                subtitle: ""
+                subtitle: root.deviceSubtitle(modelData)
                 leadingIcon: modelData.icon
                 badges: []
+                primaryEnabled: Services.BluetoothService.disconnectingMac === "" && Services.BluetoothService.connectingMac === ""
+                opacity: root.deviceOpacity(modelData)
                 onPrimaryTriggered: Services.BluetoothService.onRowPrimary(modelData)
+
+                Behavior on opacity {
+                    NumberAnimation { duration: ThemeModule.Theme.animDuration }
+                }
             }
         },
 
@@ -115,10 +136,16 @@ Components.Card {
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.name
-                subtitle: ""
+                subtitle: root.deviceSubtitle(modelData)
                 leadingIcon: modelData.icon
                 badges: []
+                primaryEnabled: Services.BluetoothService.disconnectingMac === "" && Services.BluetoothService.connectingMac === ""
+                opacity: root.deviceOpacity(modelData)
                 onPrimaryTriggered: Services.BluetoothService.onRowPrimary(modelData)
+
+                Behavior on opacity {
+                    NumberAnimation { duration: ThemeModule.Theme.animDuration }
+                }
             }
         }
 
@@ -134,10 +161,16 @@ Components.Card {
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.name
-                subtitle: ""
+                subtitle: root.deviceSubtitle(modelData)
                 leadingIcon: modelData.icon
                 badges: []
+                primaryEnabled: Services.BluetoothService.disconnectingMac === "" && Services.BluetoothService.connectingMac === ""
+                opacity: root.deviceOpacity(modelData)
                 onPrimaryTriggered: Services.BluetoothService.onRowPrimary(modelData)
+
+                Behavior on opacity {
+                    NumberAnimation { duration: ThemeModule.Theme.animDuration }
+                }
             }
         }
 
@@ -150,28 +183,68 @@ Components.Card {
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
+        // ── Scan button with countdown ──────────
         Rectangle {
             visible: Services.BluetoothService.btOn
             width: parent.width
             height: 32
             radius: ThemeModule.Theme.borderRadiusSmall
-            color: scanMouse.containsMouse ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
+            color: scanMouse.containsMouse && scanMouse.enabled ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
             border.width: 1
             border.color: Qt.rgba(ThemeModule.Theme.blue.r, ThemeModule.Theme.blue.g, ThemeModule.Theme.blue.b, 0.3)
+            opacity: (Services.BluetoothService.btOn && !Services.BluetoothService.scanning) ? 1.0 : (Services.BluetoothService.scanning ? 0.8 : 0.5)
 
-            Text {
+            Behavior on opacity {
+                NumberAnimation { duration: ThemeModule.Theme.animDuration }
+            }
+
+            Column {
                 anchors.centerIn: parent
-                text: Services.BluetoothService.scanning ? "⏳ Scanning..." : "🔍 Scan for devices"
-                font.pixelSize: ThemeModule.Theme.fontSizeSmall
-                font.family: ThemeModule.Theme.fontFamily
-                color: Services.BluetoothService.btOn ? ThemeModule.Theme.blue : ThemeModule.Theme.overlay
+                spacing: 2
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: {
+                        if (!Services.BluetoothService.scanning)
+                            return "🔍 Scan for devices";
+                        var remaining = Services.BluetoothService.scanTimeout - Services.BluetoothService.scanElapsed;
+                        if (remaining < 0) remaining = 0;
+                        return "⏳ Scanning... (" + remaining + "s)";
+                    }
+                    font.pixelSize: ThemeModule.Theme.fontSizeSmall
+                    font.family: ThemeModule.Theme.fontFamily
+                    color: Services.BluetoothService.btOn ? ThemeModule.Theme.blue : ThemeModule.Theme.overlay
+                }
+
+                // Progress bar for scan
+                Rectangle {
+                    visible: Services.BluetoothService.scanning
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 100
+                    height: 3
+                    radius: 1.5
+                    color: Qt.rgba(ThemeModule.Theme.blue.r, ThemeModule.Theme.blue.g, ThemeModule.Theme.blue.b, 0.2)
+
+                    Rectangle {
+                        width: Services.BluetoothService.scanTimeout > 0
+                            ? (Services.BluetoothService.scanElapsed / Services.BluetoothService.scanTimeout) * parent.width
+                            : 0
+                        height: parent.height
+                        radius: 1.5
+                        color: ThemeModule.Theme.blue
+
+                        Behavior on width {
+                            NumberAnimation { duration: 900 }
+                        }
+                    }
+                }
             }
 
             MouseArea {
                 id: scanMouse
                 anchors.fill: parent
                 hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 enabled: Services.BluetoothService.btOn && !Services.BluetoothService.scanning
                 onClicked: Services.BluetoothService.startScan()
             }

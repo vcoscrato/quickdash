@@ -58,17 +58,13 @@ Components.Card {
             spacing: ThemeModule.Theme.spacingTiny
 
             Repeater {
-                model: root.notifList
+                model: dashboard.activePanel === "notificationCenter" ? root.notifList : root.notifList.slice(0, 3)
 
                 delegate: Rectangle {
                     width: parent.width
                     height: notifContent.height + ThemeModule.Theme.spacingMedium
                     radius: ThemeModule.Theme.borderRadiusSmall
                     color: notifMouse.containsMouse ? ThemeModule.Theme.cardHover : Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.3)
-
-                    Behavior on color {
-                        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-                    }
 
                     Column {
                         id: notifContent
@@ -91,7 +87,8 @@ Components.Card {
                                 color: ThemeModule.Theme.accent
                             }
                             Text {
-                                text: "· " + root.formatTimeAgo(modelData.time)
+                                // refreshTick dependency forces periodic re-evaluation
+                                text: "· " + root.formatTimeAgo(modelData.time, Services.SystemState.refreshTick)
                                 font.pixelSize: 10
                                 font.family: ThemeModule.Theme.fontFamily
                                 color: ThemeModule.Theme.overlay
@@ -167,7 +164,9 @@ Components.Card {
         }
     }
 
-    function formatTimeAgo(date) {
+    function formatTimeAgo(date, tick) {
+        // 'tick' parameter is unused but creates a QML binding dependency
+        // that forces periodic re-evaluation of the time-ago string.
         if (!date) return "";
         var now = new Date();
         var diff = Math.floor((now - date) / 1000);

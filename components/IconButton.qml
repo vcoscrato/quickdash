@@ -11,6 +11,7 @@ Rectangle {
     property real size: 36
     property real iconXOffset: 0
     property real iconYOffset: 0
+    property alias containsMouse: mouseArea.containsMouse
 
     signal clicked()
 
@@ -20,10 +21,6 @@ Rectangle {
     color: mouseArea.containsMouse
         ? (mouseArea.pressed ? ThemeModule.Theme.surface2 : root.hoverColor)
         : "transparent"
-
-    Behavior on color {
-        ColorAnimation { duration: ThemeModule.Theme.animDuration }
-    }
 
     Text {
         anchors.centerIn: parent

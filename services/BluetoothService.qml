@@ -15,6 +15,11 @@ Singleton {
     property var discoveredDevices: []
     property var connectedMacs: ({})
 
+    property string connectingMac: ""
+    property string disconnectingMac: ""
+    property int scanElapsed: 0
+    readonly property int scanTimeout: 12
+
     property var connectedRows: []
     property var knownRows: []
     property var discoveredRows: []
@@ -119,9 +124,11 @@ Singleton {
         if (!btOn) return;
 
         if (row.connected) {
+            disconnectingMac = row.mac;
             disconnectProc.command = ["bluetoothctl", "disconnect", row.mac];
             disconnectProc.running = true;
         } else {
+            connectingMac = row.mac;
             connectProc.command = ["bluetoothctl", "connect", row.mac];
             connectProc.running = true;
         }
@@ -131,6 +138,8 @@ Singleton {
         if (!btOn || scanning) return;
         discoveredDevices = [];
         scanning = true;
+        scanElapsed = 0;
+        scanElapsedTimer.restart();
         scanProc.running = true;
     }
 
@@ -158,6 +167,18 @@ Singleton {
         running: false
         repeat: false
         onTriggered: root.rebuildRows()
+    }
+
+    Timer {
+        id: scanElapsedTimer
+        interval: 1000
+        running: false
+        repeat: true
+        onTriggered: {
+            root.scanElapsed++;
+            if (root.scanElapsed >= root.scanTimeout)
+                scanElapsedTimer.stop();
+        }
     }
 
     // ── Processes ──────────────────────────────────────────
@@ -238,6 +259,7 @@ Singleton {
         }
         onExited: {
             scanning = false;
+            scanElapsedTimer.stop();
             discoveredDevices = scanProc.results;
             scanProc.results = [];
             root.startProcess(pairedProc);
@@ -265,13 +287,19 @@ Singleton {
         id: connectProc
         command: ["bluetoothctl", "connect", ""]
         running: false
-        onExited: root.refreshAll(true)
+        onExited: {
+            root.connectingMac = "";
+            root.refreshAll(true);
+        }
     }
 
     Process {
         id: disconnectProc
         command: ["bluetoothctl", "disconnect", ""]
         running: false
-        onExited: root.refreshAll(true)
+        onExited: {
+            root.disconnectingMac = "";
+            root.refreshAll(true);
+        }
     }
 }
