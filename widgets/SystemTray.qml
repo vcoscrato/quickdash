@@ -7,7 +7,7 @@ import "../theme" as ThemeModule
 
 Components.Card {
     id: root
-    title: "System Tray"
+    title: ""
     icon: ""
 
     Flow {

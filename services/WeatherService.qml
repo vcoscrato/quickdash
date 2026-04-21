@@ -8,6 +8,7 @@ Singleton {
 
     property bool active: true
     property string currentWeatherStr: "Loading..."
+    property string location: ""
     property bool fetchQueued: false
 
     Timer {
@@ -19,8 +20,15 @@ Singleton {
         onTriggered: root.fetchWeather()
     }
 
+    onLocationChanged: {
+        root.fetchWeather();
+    }
+
     function fetchWeather() {
         if (!weatherProc.running) {
+            var loc = root.location.trim();
+            var url = loc !== "" ? ("wttr.in/" + loc + "?format=%c+%t") : "wttr.in/?format=%c+%t";
+            weatherProc.command = ["curl", "-s", url];
             weatherProc.running = true;
         } else {
             root.fetchQueued = true;
@@ -31,9 +39,9 @@ Singleton {
         id: weatherProc
         command: ["curl", "-s", "wttr.in/?format=%c+%t"]
         running: false
-        
+
         property string output: ""
-        
+
         stdout: SplitParser {
             onRead: function(data) {
                 weatherProc.output += data;
@@ -43,17 +51,16 @@ Singleton {
         onExited: {
             var text = weatherProc.output.trim();
             weatherProc.output = "";
-            
-            // Basic validation
+
             if (text.length > 0 && !text.includes("Sorry") && !text.includes("Unknown")) {
                 root.currentWeatherStr = text;
             } else if (text === "") {
                 root.currentWeatherStr = "Offline";
             }
-            
+
             if (root.fetchQueued) {
                 root.fetchQueued = false;
-                weatherProc.running = true;
+                root.fetchWeather();
             }
         }
     }

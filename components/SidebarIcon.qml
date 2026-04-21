@@ -14,11 +14,9 @@ Rectangle {
     signal activated(string name)
     signal wheelDelta(int angleDelta)
 
-    readonly property int accentReserve: 4
-
     width: parent ? parent.width : ThemeModule.Theme.sidebarIconSize
     height: ThemeModule.Theme.sidebarIconSize
-    radius: ThemeModule.Theme.borderRadiusSmall
+    radius: 0
     color: active ? Qt.rgba(ThemeModule.Theme.accent.r, ThemeModule.Theme.accent.g, ThemeModule.Theme.accent.b, 0.15) : (mouseArea.containsMouse ? ThemeModule.Theme.cardHover : "transparent")
 
     // Left accent bar when active
@@ -29,20 +27,16 @@ Rectangle {
         color: ThemeModule.Theme.accent
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        visible: root.active
+        opacity: root.active ? 1.0 : 0.0
 
-        // Entrance animation for the bar
-        scale: root.active ? 1.0 : 0.0
-        Behavior on scale {
-            NumberAnimation { duration: ThemeModule.Theme.animDuration; easing.type: Easing.OutBack }
+        Behavior on opacity {
+            NumberAnimation { duration: ThemeModule.Theme.animDuration; easing.type: Easing.OutCubic }
         }
     }
 
     Column {
-        width: parent.width - root.accentReserve
+        width: parent.width
         anchors.verticalCenter: parent.verticalCenter
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: root.accentReserve / 2
         spacing: 1
 
         Text {

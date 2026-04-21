@@ -9,9 +9,8 @@ Calendar 1.0 Calendar.qml
 CapturePad 1.0 CapturePad.qml
 Clock 1.0 Clock.qml
 ConfigPanel 1.0 ConfigPanel.qml
-Countdowns 1.0 Countdowns.qml
-DailyFocus 1.0 DailyFocus.qml
 DisplayControl 1.0 DisplayControl.qml
+TodoList 1.0 TodoList.qml
 KeyboardLayout 1.0 KeyboardLayout.qml
 MiniPlayer 1.0 MiniPlayer.qml
 NetworkPanel 1.0 NetworkPanel.qml
@@ -22,4 +21,3 @@ QuickCommands 1.0 QuickCommands.qml
 RandomQuote 1.0 RandomQuote.qml
 SystemMonitor 1.0 SystemMonitor.qml
 SystemTray 1.0 SystemTray.qml
-WeatherStrip 1.0 WeatherStrip.qml

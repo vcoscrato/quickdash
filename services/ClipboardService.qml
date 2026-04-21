@@ -84,7 +84,7 @@ Singleton {
         
         stdout: SplitParser {
             onRead: function(data) {
-                cliphistListProc.buffer += data;
+                cliphistListProc.buffer += data + "\n";
             }
         }
 
@@ -114,7 +114,8 @@ Singleton {
                 if (tabIndex > 0) {
                     newHistory.push({
                         "id": line.substring(0, tabIndex),
-                        "preview": line.substring(tabIndex + 1)
+                        "preview": line.substring(tabIndex + 1),
+                        "raw": line
                     });
                 }
             }
@@ -127,6 +128,9 @@ Singleton {
             return;
         }
 
+        // cliphist decode expects the full "id\tpreview" line, not just the id
+        var fullLine = entry.raw || (entry.id + "\t" + (entry.preview || ""));
+
         root.pendingCopyId = entry.id;
         root.feedbackText = "Copying…";
         root.feedbackTone = "info";
@@ -134,13 +138,21 @@ Singleton {
         copyProc.command = [
             "sh",
             "-lc",
-            "printf '%s\\n' " + root.shellQuote(entry.id) + " | cliphist decode | wl-copy"
+            "printf '%s\\n' " + root.shellQuote(fullLine) + " | cliphist decode | wl-copy"
         ];
         copyProc.running = true;
     }
 
     function decodeAndCopy(id) {
-        root.copyEntry({ id: id, preview: "" });
+        // Find the full entry in history to get the raw line
+        for (var i = 0; i < root.history.length; i++) {
+            if (root.history[i].id === id) {
+                root.copyEntry(root.history[i]);
+                return;
+            }
+        }
+        // Fallback: try with id only (may not decode correctly without preview)
+        root.copyEntry({ id: id, preview: "", raw: id });
     }
 
     Process {

@@ -13,6 +13,7 @@ ShellRoot {
 
     function defaultSidebarIcon(widgetName) {
         var map = {
+            "clock": "🕐",
             "capturePad": "🗂",
             "quickCommands": "🚀",
             "configPanel": "⚙",
@@ -23,23 +24,21 @@ ShellRoot {
             "brightnessControl": "☀",
             "displayControl": "🖥",
             "keyboardLayout": "⌨",
+            "notificationCenter": "🔔",
+            "calendar": "📅",
+            "batteryStatus": "🔋",
             "systemMonitor": "📊",
+            "systemTray": "▫",
+            "todoList": "✓",
+            "randomQuote": "💭",
+            "nowPlaying": "🎵",
             "powerMenu": "⏻"
         };
         return map[widgetName] || "❓";
     }
 
     function normalizeWidgetName(name) {
-        switch (name) {
-        case "clipboardHistory":
-        case "scratchpad":
-            return "capturePad";
-        case "quickTimer":
-        case "screenshotControls":
-            return "";
-        default:
-            return typeof name === "string" ? name : "";
-        }
+        return typeof name === "string" ? name : "";
     }
 
     function normalizeWidgetList(list) {
@@ -50,7 +49,26 @@ ShellRoot {
         var output = [];
         var seen = ({});
         for (var i = 0; i < list.length; i++) {
-            var widgetName = root.normalizeWidgetName(list[i]);
+            var item = list[i];
+
+            // Nested array = row group (widgets rendered side-by-side)
+            // Use a plain object so QML var/Repeater preserves the type reliably.
+            if (Array.isArray(item)) {
+                var group = [];
+                for (var j = 0; j < item.length; j++) {
+                    var gName = root.normalizeWidgetName(item[j]);
+                    if (gName && !seen[gName]) {
+                        seen[gName] = true;
+                        group.push(gName);
+                    }
+                }
+                if (group.length > 0) {
+                    output.push({ group: true, items: group });
+                }
+                continue;
+            }
+
+            var widgetName = root.normalizeWidgetName(item);
             if (!widgetName || seen[widgetName]) {
                 continue;
             }
@@ -195,6 +213,79 @@ ShellRoot {
         return output;
     }
 
+    function shellQuote(s) {
+        return "'" + String(s).replace(/'/g, "'\"'\"'") + "'";
+    }
+
+    // Strip // line comments and /* */ block comments from a JSON string.
+    // Handles strings correctly — comment markers inside strings are ignored.
+    // Uses only ES5-compatible String methods (QML V4 JS engine).
+    function stripJsonComments(str) {
+        var out = "";
+        var i = 0;
+        var len = str.length;
+        var inString = false;
+        var inLineComment = false;
+        var inBlockComment = false;
+        while (i < len) {
+            var ch   = str[i];
+            var next = (i + 1 < len) ? str[i + 1] : "";
+            if (inLineComment) {
+                if (ch === "\n") { inLineComment = false; out += ch; }
+            } else if (inBlockComment) {
+                if (ch === "*" && next === "/") { inBlockComment = false; i++; }
+            } else if (inString) {
+                out += ch;
+                if (ch === "\\") { i++; if (i < len) { out += str[i]; } }
+                else if (ch === "\"") { inString = false; }
+            } else {
+                if      (ch === "/" && next === "/") { inLineComment  = true; i++; }
+                else if (ch === "/" && next === "*") { inBlockComment = true; i++; }
+                else { if (ch === "\"") { inString = true; } out += ch; }
+            }
+            i++;
+        }
+        return out;
+    }
+
+    function stripTrailingJsonCommas(str) {
+        var out = "";
+        var i = 0;
+        var len = str.length;
+        var inString = false;
+        while (i < len) {
+            var ch = str[i];
+            if (inString) {
+                out += ch;
+                if (ch === "\\") {
+                    i++;
+                    if (i < len) {
+                        out += str[i];
+                    }
+                } else if (ch === "\"") {
+                    inString = false;
+                }
+            } else {
+                if (ch === "\"") {
+                    inString = true;
+                    out += ch;
+                } else if (ch === ",") {
+                    var j = i + 1;
+                    while (j < len && /\s/.test(str[j])) {
+                        j++;
+                    }
+                    if (j >= len || (str[j] !== "}" && str[j] !== "]")) {
+                        out += ch;
+                    }
+                } else {
+                    out += ch;
+                }
+            }
+            i++;
+        }
+        return out;
+    }
+
     function normalizeConfig(config) {
         var input = config && typeof config === "object" ? config : ({});
         var normalized = ({});
@@ -239,34 +330,69 @@ ShellRoot {
         }
     }
 
-    FileView {
-        id: configFile
-        path: Qt.resolvedUrl("config.json")
-        blockLoading: true
-        printErrors: false
+    // ── JSONC config loading via XDG paths ─────────────────────────────────────
+    //
+    // A single sh call resolves XDG dirs and reads the config file. Output:
+    //   line 1  — config dir   e.g. /home/user/.config/quickdash
+    //   line 2  — data dir     e.g. /home/user/.local/share/quickdash
+    //   line 3+ — JSONC content (user config if present, bundled example otherwise)
+    //
+    // Comments are stripped in pure JS (stripJsonComments) before JSON.parse().
+    // No external scripts, no Python — just sh, cat, and QML.
+    //
+    // Quickshell.reload() re-runs everything including this Process, so
+    // native hot-reload works exactly as expected.
+
+    readonly property string _bundledExample: Qt.resolvedUrl("config.example.jsonc").toString().replace(/^file:\/\//, "")
+
+    Process {
+        id: configLoadProc
+        running: false
+        stdout: StdioCollector {
+            id: configOutput
+        }
+        onExited: function(exitCode) {
+            var text = configOutput.text || "";
+            var nl1 = text.indexOf("\n");
+            var nl2 = text.indexOf("\n", nl1 + 1);
+            if (nl1 === -1 || nl2 === -1) {
+                console.warn("[QuickDash] Unexpected config loader output, using defaults");
+                root.config = {};
+                return;
+            }
+            var configDir = text.substring(0, nl1);
+            var dataDir   = text.substring(nl1 + 1, nl2);
+            var jsonc     = text.substring(nl2 + 1);
+            Services.SystemState.dataDir    = dataDir;
+            Services.SystemState.configPath = configDir + "/config.jsonc";
+            if (jsonc.replace(/\s/g, "") === "") {
+                console.warn("[QuickDash] Config file empty, using defaults");
+                root.config = {};
+                return;
+            }
+            try {
+                var parsed = JSON.parse(root.stripTrailingJsonCommas(root.stripJsonComments(jsonc)).trim());
+                root.config = root.normalizeConfig(parsed);
+                ThemeModule.Theme.paletteName    = root.config.colorScheme     || "everforest";
+                Services.WeatherService.location = root.config.weatherLocation || "";
+            } catch (e) {
+                console.warn("[QuickDash] Config parse failed:", e);
+                root.config = {};
+            }
+        }
     }
 
-    FileView {
-        id: fallbackConfigFile
-        path: Qt.resolvedUrl("config.example.json")
-        blockLoading: true
-        printErrors: false
-    }
-
-    // Parse config from file
     Component.onCompleted: {
         Services.SystemState.setDashboardState(root.dashboardVisible, root.dashboardActive);
-        try {
-            var configText = configFile.text();
-            if (!configText || configText.trim() === "") {
-                configText = fallbackConfigFile.text();
-            }
-            root.config = root.normalizeConfig(JSON.parse(configText));
-            ThemeModule.Theme.paletteName = root.config.colorScheme || "catppuccin-mocha";
-        } catch (e) {
-            console.warn("[QuickDash] Failed to parse config JSON:", e);
-            root.config = {};
-        }
+        configLoadProc.command = [
+            "sh", "-c",
+            "printf '%s\\n%s\\n' " +
+            "\"${XDG_CONFIG_HOME:-$HOME/.config}/quickdash\" " +
+            "\"${XDG_DATA_HOME:-$HOME/.local/share}/quickdash\"; " +
+            "cat \"${XDG_CONFIG_HOME:-$HOME/.config}/quickdash/config.jsonc\" 2>/dev/null " +
+            "|| cat " + root.shellQuote(root._bundledExample)
+        ];
+        configLoadProc.running = true;
     }
 
     // ── Dashboard Window ────────────────────────────────

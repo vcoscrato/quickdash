@@ -11,7 +11,11 @@ Components.Card {
     icon: "🗂"
 
     property bool dashboardActive: true
-    readonly property string notesPath: Qt.resolvedUrl("../data/scratchpad.txt").toString().replace(/^file:\/\//, "")
+    readonly property string notesPath: {
+        var base = Services.SystemState.dataDir;
+        return base !== "" ? (base + "/scratchpad.txt")
+                           : Qt.resolvedUrl("../data/scratchpad.txt").toString().replace(/^file:\/\//, "");
+    }
     readonly property string notesDirPath: root.notesPath.substring(0, root.notesPath.lastIndexOf("/"))
     readonly property bool wideLayout: width >= 420
 
@@ -84,11 +88,12 @@ Components.Card {
         property string buffer: ""
         stdout: SplitParser {
             onRead: function(data) {
-                readProc.buffer += data;
+                readProc.buffer += data + "\n";
             }
         }
         onExited: function(exitCode) {
-            var nextText = exitCode === 0 ? readProc.buffer : "";
+            // Remove the trailing newline added by SplitParser re-joining
+            var nextText = exitCode === 0 ? readProc.buffer.replace(/\n$/, "") : "";
             root.savedText = nextText;
             notesInput.text = nextText;
             root.notesLoaded = true;

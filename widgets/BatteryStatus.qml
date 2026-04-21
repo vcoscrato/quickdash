@@ -61,13 +61,7 @@ Components.Card {
                     text: root.batteryReady ? Math.round(root.batteryPercent) + "%" : "—"
                     font.pixelSize: ThemeModule.Theme.fontSizeNormal
                     font.family: ThemeModule.Theme.fontFamily
-                    color: {
-                        if (!root.batteryReady) return ThemeModule.Theme.subtext;
-                        var pct = root.batteryPercent;
-                        if (pct > 30) return ThemeModule.Theme.success;
-                        if (pct > 10) return ThemeModule.Theme.warning;
-                        return ThemeModule.Theme.error;
-                    }
+                    color: ThemeModule.Theme.text
                 }
             }
 
@@ -105,19 +99,10 @@ Components.Card {
                 anchors.margins: 2
                 width: root.batteryReady ? (root.batteryPercent / 100) * (parent.width - 4) : 0
                 radius: 2
-                color: {
-                    if (!root.batteryReady) return ThemeModule.Theme.subtext;
-                    var pct = root.batteryPercent;
-                    if (pct > 30) return ThemeModule.Theme.success;
-                    if (pct > 10) return ThemeModule.Theme.warning;
-                    return ThemeModule.Theme.error;
-                }
+                color: ThemeModule.Theme.accent
 
                 Behavior on width {
                     NumberAnimation { duration: ThemeModule.Theme.animDurationSlow }
-                }
-                Behavior on color {
-                    ColorAnimation { duration: ThemeModule.Theme.animDurationSlow }
                 }
             }
 

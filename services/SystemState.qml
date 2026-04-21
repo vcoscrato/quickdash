@@ -9,7 +9,10 @@ Singleton {
     property bool dashboardVisible: true
     property bool dashboardActive: true
     property bool dndEnabled: false
-
+    // Populated by the config loader — XDG-resolved paths for data files
+    // and the user's config file. Widgets read these instead of hardcoding.
+    property string dataDir: ""
+    property string configPath: ""
     property var notificationHistory: []
     property var activePopups: []
     property int popupCounter: 0

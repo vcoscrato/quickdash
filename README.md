@@ -13,7 +13,7 @@ If you're looking for ideas or a starting point for your own setup, feel free to
 
 ## What it does
 
-- 🕐 **Clock** — time, date, and an integrated focus timer
+- 🕐 **Clock** — time, date, weather, and an integrated focus timer
 - 🗂 **Capture Pad** — merged scratchpad + clipboard history with quick recopy
 - 🎵 **Now Playing** — media controls with album art via MPRIS
 - 🔊 **Audio** — volume, mute, output switching
@@ -39,13 +39,41 @@ Optional but worth having:
 - **cliphist** — needed for clipboard history inside Capture Pad
 - **gtk-launch** — needed if you want launcher entries that use desktop ids
 
-## Running it
+## Installation
 
-Clone it somewhere (I keep mine at `~/.config/quickdash`):
+Clone the repository anywhere on your machine:
 
 ```bash
-git clone <your-fork-url> ~/.config/quickdash
-quickshell -p ~/.config/quickdash
+git clone https://github.com/vcoscrato/quickdash.git ~/Documents/quickdash
+cd ~/Documents/quickdash
+./install.sh
+```
+
+The launcher points directly at the source tree you installed from, so if you move the repo later,
+run `./install.sh` again from the new location.
+
+The installer sets up three things:
+
+| Path | What it is |
+|------|------------|
+| `~/.local/share/quickdash` | Runtime data directory for notes and to-dos |
+| `~/.config/quickdash/config.jsonc` | Config file seeded from the bundled example |
+| `~/.local/bin/quickdash` | Launcher script pointing at your source tree |
+
+QuickDash also stores runtime data under `~/.local/share/quickdash/`, currently:
+- `scratchpad.txt` for Capture Pad notes
+- `todos.json` for the To-Do widget
+
+Make sure `~/.local/bin` is in your `$PATH`, then:
+
+```bash
+quickdash
+```
+
+To uninstall (config files are kept):
+
+```bash
+./install.sh --uninstall
 ```
 
 ### My Hyprland setup
@@ -57,61 +85,55 @@ I run QuickDash inside a Hyprland special workspace alongside a terminal, so I c
 bind = SUPER, GRAVE, togglespecialworkspace, dash
 
 # Auto-launch QuickDash + a terminal the first time the workspace opens
-workspace = special:dash, on-created-empty: quickshell -p ~/.config/quickdash & kitty
+workspace = special:dash, on-created-empty: quickdash & kitty
 ```
 
-Reload Hyprland and `Super + \`` will toggle the whole thing.
+Reload Hyprland and `Super + `` will toggle the whole thing.
 
 ## Configuration
 
-Copy the example config and edit it:
+Your config lives at `~/.config/quickdash/config.jsonc`. It uses **JSONC** — standard JSON
+that allows `//` line comments, `/* */` block comments, and trailing commas. Edit it with
+any text editor.
 
-```bash
-cp ~/.config/quickdash/config.example.json ~/.config/quickdash/config.json
-```
+The installer seeds this file from the bundled `config.example.jsonc`, which documents every
+option with inline comments. See that file for the full reference.
 
-The main options:
+Inside QuickDash, the **Config** panel (⚙) has two buttons:
+- **Open** — opens the config file in `$VISUAL`, `$EDITOR`, or `xdg-open`
+- **Reload** — triggers a full QuickShell reload so config and QML changes are both reapplied
 
-```json
-{
-    "colorScheme": "catppuccin-mocha",
-    "audioQuickSwitch": ["Speakers", "Headphones"],
-    "quickCommands": [
-        { "label": "Terminal", "icon": "", "command": ["kitty"] },
-        { "label": "Browser", "icon": "🌐", "desktop": "firefox" },
-        { "label": "Reload Waybar", "icon": "↻", "shell": "pkill -USR2 waybar", "closeOnLaunch": false }
-    ],
-    "keyboardLayouts": ["us", "br"],
-    "topAnchor": ["clock"],
-    "bottomAnchor": ["systemTray", "calendar"],
-    "middleDefault": ["notificationCenter", "batteryStatus"],
-    "sidebar": [
-        { "widget": "capturePad", "icon": "🗂" },
-        { "widget": "quickCommands", "icon": "🚀" },
-        { "widget": "networkPanel",    "icon": "📶" },
-        { "widget": "bluetoothPanel",  "icon": "🔵" },
-        { "widget": "audioControl",    "icon": "🔊" },
-        { "widget": "audioInputControl", "icon": "🎤" },
-        { "widget": "brightnessControl", "icon": "☀" },
-        { "widget": "displayControl",  "icon": "🖥" },
-        { "widget": "keyboardLayout",  "icon": "⌨" }
-    ]
-}
-```
-
-You can also set `windowWidth` and `windowHeight` to override the default 420×900 size.
-
-QuickDash now hides unsupported widgets automatically. If the machine has no battery, no Bluetooth controller, no usable backlight control, or no second monitor, those widgets disappear from the layout and the sidebar instead of showing dead UI.
+QuickDash hides unsupported widgets automatically. If the machine has no battery, no Bluetooth
+controller, no usable backlight, or no second monitor, those widgets are excluded from the
+layout and sidebar rather than showing dead UI.
 
 ### Audio quick switch
 
-`audioQuickSwitch` does two things: the ⇄ button cycles through those devices in order, and the sink list only shows devices whose name contains one of those strings. Leave it empty to show everything.
+`audioQuickSwitch` does two things: the ⇄ button cycles through those devices in order, and the
+sink list only shows devices whose name contains one of those strings. Leave it empty to show
+all sinks.
+
+`audioInputQuickSwitch` does the same thing for microphone / input devices.
 
 To find your sink names:
 
 ```bash
 pactl list sinks | grep "Description:"
 ```
+
+To find your source names:
+
+```bash
+pactl list sources | grep "Description:"
+```
+
+### Weather
+
+`weatherLocation` controls the weather text shown inline in the **Clock** widget.
+
+- Set it to a city or location string such as `"London"` or `"Sao Paulo"`.
+- Leave it empty to let `wttr.in` infer a location automatically.
+- Click the weather text in the Clock to refresh it manually.
 
 ### Quick launcher
 
@@ -124,7 +146,7 @@ Launcher entries live under `quickCommands`.
 
 Example:
 
-```json
+```jsonc
 {
     "quickCommands": [
         {
@@ -162,13 +184,24 @@ QuickDash uses a 3-zone anchored layout plus a sidebar. The zones are configured
 - `middleDefault`: Widgets shown in the center space when no sidebar panel is open. Commonly `notificationCenter`.
 - `sidebar`: List of objects specifying the widgets that open as panels when clicked, along with their icon.
 
+Zones also support row groups. Use a nested array to render widgets side by side in a single row:
+
+```jsonc
+{
+    "bottomAnchor": [["systemTray", "calendar"]],
+    "middleDefault": [["batteryStatus", "systemMonitor"], "notificationCenter"]
+}
+```
+
+`MiniPlayer` is not a configurable widget. It appears automatically above the middle zone when media is active.
+
 Available widget names:
 
 | Name | Widget |
 |------|--------|
 | `capturePad` | Notes + clipboard history |
-| `clock` | Clock |
-| `nowPlaying` | Media player (Auto-appears via MiniPlayer when active) |
+| `clock` | Clock, date, weather, and focus timer |
+| `nowPlaying` | Full media player panel |
 | `quickCommands` | Quick launcher |
 | `audioControl` | Volume (output) |
 | `audioInputControl` | Volume (input/mic) |
@@ -180,7 +213,9 @@ Available widget names:
 | `keyboardLayout` | Keyboard layout |
 | `calendar` | Calendar |
 | `batteryStatus` | Battery |
-| `configPanel` | Theme picker |
+| `todoList` | Persistent to-do list |
+| `randomQuote` | Rotating quote card |
+| `configPanel` | Config path viewer, open and reload buttons |
 | `systemMonitor` | CPU, memory, and thermal stats |
 | `powerMenu` | Power actions |
 | `systemTray` | System tray |
@@ -193,36 +228,41 @@ Available widget names:
 - `catppuccin-latte` — light
 - `nord` — blue-gray
 - `dracula` — dark purple
-- `gruvbox` — warm retro (what I use)
+- `gruvbox` — warm retro
 - `tokyo-night` — dark blue/purple
 - `rose-pine` — dark pine/rose
 - `solarized-dark` — teal/blue
-- `everforest` — warm green
+- `everforest` — warm green (default)
 
 ## Project structure
 
 ```
 quickdash/
-├── shell.qml              # Entry point
-├── Dashboard.qml          # Dashboard window content
-├── NotificationToastWindow.qml  # Toast overlay
-├── config.example.json    # Example config for new users
+├── shell.qml              # Entry point; loads config, owns the window
+├── config.example.jsonc   # Documented config template seeded on first install
+├── install.sh             # XDG-compliant installer (run once from source dir)
 ├── .github/               # Screenshots and assets
-├── theme/                 # Styling and palettes
+├── core/                  # Dashboard window and notification toast overlay
+│   ├── Dashboard.qml
+│   ├── NotificationToastWindow.qml
+│   └── qmldir
+├── theme/                 # Styling and color palettes
 │   ├── Theme.qml
 │   ├── Palettes.qml
 │   └── qmldir
-├── services/              # Logic and system interactions
+├── services/              # Logic and system integrations
 │   ├── AudioService.qml
 │   ├── ClipboardService.qml
 │   ├── NetworkService.qml
 │   ├── BluetoothService.qml
 │   ├── DisplayService.qml
 │   ├── FeatureSupport.qml
+│   ├── SystemMonitorService.qml
 │   ├── SystemState.qml
+│   ├── WeatherService.qml
 │   ├── ProcUtils.qml
 │   └── qmldir
-├── components/            # Reusable UI parts
+├── components/            # Reusable UI primitives
 │   ├── Card.qml
 │   ├── DeviceRow.qml
 │   ├── TogglePill.qml
@@ -230,25 +270,39 @@ quickdash/
 │   ├── SidebarIcon.qml
 │   ├── PanelHeader.qml
 │   └── qmldir
-└── widgets/               # Functional dashboard modules
+└── widgets/               # Dashboard panels and widgets
+    ├── AudioControl.qml
+    ├── AudioInputControl.qml
+    ├── BatteryStatus.qml
+    ├── BluetoothPanel.qml
+    ├── BrightnessControl.qml
+    ├── Calendar.qml
     ├── CapturePad.qml
     ├── Clock.qml
-    ├── MiniPlayer.qml
-    ├── NowPlaying.qml
-    ├── QuickCommands.qml
-    ├── AudioControl.qml
-    ├── BrightnessControl.qml
+    ├── ConfigPanel.qml
     ├── DisplayControl.qml
-    ├── NetworkPanel.qml
-    ├── BluetoothPanel.qml
-    ├── NotificationCenter.qml
     ├── KeyboardLayout.qml
+    ├── MiniPlayer.qml
+    ├── NetworkPanel.qml
+    ├── NotificationCenter.qml
+    ├── NowPlaying.qml
+    ├── PowerMenu.qml
+    ├── QuickCommands.qml
+    ├── RandomQuote.qml
+    ├── SystemMonitor.qml
+    ├── SystemTray.qml
+    ├── TodoList.qml
     └── qmldir
 ```
 
-QuickShell supports live reloading — edit any `.qml` file and changes apply instantly.
+QuickShell supports live reloading. Use the **Reload** button or `quickshell --reload` after
+editing `config.jsonc`, and use the same reload path when you are iterating on the QML itself
+from your source tree.
 
 ## Troubleshooting
+
+**A widget name does nothing** — QuickDash now only accepts the widget names listed above. Old
+aliases and removed widgets are not normalized anymore.
 
 **Notifications not showing** — QuickDash runs its own notification daemon, so only one can be active at a time. Kill any other daemons first:
 

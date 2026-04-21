@@ -1,0 +1,165 @@
+// QuickDash configuration
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// This file uses JSONC — standard JSON with:
+//   •  // line comments  (to end of line)
+//   •  /* block comments (across multiple lines) */
+//   •  trailing commas before } and ]
+//
+// Location:  $XDG_CONFIG_HOME/quickdash/config.jsonc
+//            Usually:  ~/.config/quickdash/config.jsonc
+//
+// To apply changes after editing:
+//   • Open the Config panel (⚙) inside QuickDash and click Reload, or
+//   • Run from a terminal:  quickshell --reload
+//
+// ─────────────────────────────────────────────────────────────────────────────
+{
+    // ── Appearance ────────────────────────────────────────────────────────────
+    //
+    // Color scheme to use.  Available values:
+    //
+    //   catppuccin-mocha      dark, lavender accents
+    //   catppuccin-macchiato  dark
+    //   catppuccin-frappe     dark
+    //   catppuccin-latte      light
+    //   nord                  blue-gray
+    //   dracula               dark purple
+    //   gruvbox               warm retro
+    //   tokyo-night           dark blue/purple
+    //   rose-pine             dark pine/rose
+    //   solarized-dark        teal/blue accents
+    //   everforest            warm green (default)
+    //
+    "colorScheme": "everforest",
+
+    // ── Window ────────────────────────────────────────────────────────────────
+    //
+    // Dashboard window size in logical pixels.  Adjust to taste.
+    //
+    "windowWidth":  420,
+    "windowHeight": 900,
+
+    // ── Audio ─────────────────────────────────────────────────────────────────
+    //
+    // Output devices available via the ⇄ quick-switch button on the audio card.
+    // Each string is matched as a substring against sink display names.
+    // The sink list in the panel also filters to only show matching devices.
+    // Leave empty ([]) to show every available sink with no filtering.
+    //
+    // To find your exact sink names:
+    //   pactl list sinks | grep "Description:"
+    //
+    "audioQuickSwitch": ["Speakers", "Headphones"],
+
+    // Same idea for input devices (microphones / capture sources).
+    // To find source names:
+    //   pactl list sources | grep "Description:"
+    //
+    "audioInputQuickSwitch": [],
+
+    // ── Keyboard ──────────────────────────────────────────────────────────────
+    //
+    // Keyboard layouts to cycle through (Hyprland only).
+    // Use XKB layout codes.  Run `localectl list-x11-keymap-layouts` for options.
+    //
+    "keyboardLayouts": ["us"],
+
+    // ── Weather ───────────────────────────────────────────────────────────────
+    //
+    // City or location string shown inline in the Clock widget.
+    // Leave empty ("") to let wttr.in infer the location automatically.
+    //
+    "weatherLocation": "",
+
+    // ── Quick Launcher ────────────────────────────────────────────────────────
+    //
+    // Entries shown in the Quick Launcher panel.
+    //
+    // Each entry must have a "label" and exactly one of:
+    //
+    //   "command"  — array of strings; process launched directly (no shell).
+    //                Safe for paths with spaces.  Example: ["code", "/my/dir"]
+    //
+    //   "shell"    — string passed to sh -c.  Useful for pipes and redirects.
+    //                Example: "pkill -USR2 waybar && notify-send done"
+    //
+    //   "desktop"  — .desktop entry id launched with gtk-launch.
+    //                Example: "org.mozilla.firefox"  or simply  "firefox"
+    //
+    // Optional fields per entry:
+    //
+    //   "icon"             — emoji or short text shown on the button  (default: 🚀)
+    //   "closeOnLaunch"    — whether to close the sidebar panel        (default: true)
+    //   "workingDirectory" — working directory for the process
+    //   "environment"      — { "VAR": "value" } map merged with env
+    //   "clearEnvironment" — if true, start with an empty environment
+    //
+    "quickCommands": [
+        { "label": "Terminal",      "icon": "",  "command": ["kitty"] },
+        { "label": "Browser",       "icon": "🌐", "desktop": "firefox" },
+        {
+            "label": "Reload Waybar",
+            "icon": "↻",
+            "shell": "pkill -USR2 waybar",
+            "closeOnLaunch": false
+        }
+    ],
+
+    // ── Layout ────────────────────────────────────────────────────────────────
+    //
+    // QuickDash uses three anchored zones and a collapsible sidebar.
+    //
+    // ┌────────────────────────┐
+    // │      topAnchor         │  fixed strip at the top
+    // ├───────┬────────────────┤
+    // │       │  middleDefault │  fills center when no sidebar panel is open
+    // │sidebar│────────────────│
+    // │ icons │   (panel)      │  sidebar panel fills here when open
+    // ├───────┴────────────────┤
+    // │     bottomAnchor       │  fixed strip at the bottom
+    // └────────────────────────┘
+    //
+    // Available widget names:
+    //
+    //   clock             nowPlaying          notificationCenter  batteryStatus
+    //   capturePad        quickCommands       audioControl        audioInputControl
+    //   brightnessControl displayControl      networkPanel        bluetoothPanel
+    //   keyboardLayout    calendar            systemMonitor       powerMenu
+    //   systemTray        todoList            randomQuote         configPanel
+    //
+    // Zones also accept row groups — inner arrays of widget names rendered
+    // side by side:
+    //   "middleDefault": [["batteryStatus", "systemMonitor"], "notificationCenter"]
+    //
+    // MiniPlayer is automatic and is not configured here.
+    //
+
+    // Fixed strip pinned to the top of the window.
+    "topAnchor": ["clock"],
+
+    // Fixed strip pinned to the bottom of the window.
+    "bottomAnchor": ["systemTray", "calendar"],
+
+    // Shown in the center area when no sidebar panel is active.
+    "middleDefault": ["notificationCenter", "batteryStatus"],
+
+    // Sidebar panels.  Each entry requires:
+    //   "widget" — widget name from the list above
+    //   "icon"   — emoji shown in the sidebar strip
+    //
+    "sidebar": [
+        { "widget": "capturePad",        "icon": "🗂" },
+        { "widget": "quickCommands",     "icon": "🚀" },
+        { "widget": "networkPanel",      "icon": "📶" },
+        { "widget": "bluetoothPanel",    "icon": "🔵" },
+        { "widget": "audioControl",      "icon": "🔊" },
+        { "widget": "audioInputControl", "icon": "🎤" },
+        { "widget": "brightnessControl", "icon": "☀" },
+        { "widget": "displayControl",    "icon": "🖥" },
+        { "widget": "keyboardLayout",    "icon": "⌨" },
+        { "widget": "systemMonitor",     "icon": "📊" },
+        { "widget": "configPanel",       "icon": "⚙" },
+        { "widget": "powerMenu",         "icon": "⏻" }
+    ]
+}
