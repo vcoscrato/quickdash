@@ -8,7 +8,6 @@ Singleton {
     id: root
 
     // ── State ──────────────────────────────────────────────
-    property int networkMode: 0  // 0 = WiFi, 1 = Ethernet
     property bool wifiOn: true
     property bool scanning: false
     property string currentSSID: ""
@@ -28,8 +27,7 @@ Singleton {
     property var activeWifiByName: ({}) // {ssid: {uuid, name, ip}}
 
     property var connectedRows: []
-    property var knownRows: []
-    property var availableRows: []
+    property var otherWifiRows: []
 
     readonly property var currentConnectedWifi: connectedRows.length > 0 ? connectedRows[0] : null
 
@@ -109,19 +107,11 @@ Singleton {
     // ── Refresh ────────────────────────────────────────────
     function refreshSummary() {
         root.startProcess(activeConnectionsProc);
-
-        if (root.networkMode === 0) {
-            root.startProcess(wifiStatusProc);
-            root.startProcess(activeSsidProc);
-        } else if (currentSSID !== "") {
-            currentSSID = "";
-            root.scheduleRebuild();
-        }
+        root.startProcess(wifiStatusProc);
+        root.startProcess(activeSsidProc);
     }
 
     function refreshDetails() {
-        if (root.networkMode !== 0)
-            return;
         root.startProcess(savedProfilesProc);
     }
 
@@ -269,8 +259,7 @@ Singleton {
         available.sort(bySignalDesc);
 
         connectedRows = connected;
-        knownRows = known;
-        availableRows = available;
+        otherWifiRows = known.concat(available);
     }
 
     // ── Actions ────────────────────────────────────────────

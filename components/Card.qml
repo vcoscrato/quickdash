@@ -104,13 +104,6 @@ Rectangle {
             }
         }
 
-        // Thin separator below section label
-        Rectangle {
-            visible: root.title !== ""
-            width: parent.width
-            height: 1
-            color: ThemeModule.Theme.separator
-        }
 
         Column {
             id: pinnedColumn

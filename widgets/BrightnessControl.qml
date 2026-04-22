@@ -225,7 +225,7 @@ Components.Card {
             }
 
             Components.StyledSlider {
-                width: parent.width - 80
+                width: parent.width - 88 // 32 (emoji) + 8 (spacing) + 8 (spacing) + 40 (text) = 88
                 anchors.verticalCenter: parent.verticalCenter
                 value: root.brightnessPercent
                 enabled: root.canControlBrightness
@@ -249,7 +249,7 @@ Components.Card {
                 font.pixelSize: ThemeModule.Theme.fontSizeSmall
                 font.family: ThemeModule.Theme.fontFamily
                 color: ThemeModule.Theme.subtext
-                width: 36
+                width: 40
                 horizontalAlignment: Text.AlignRight
                 anchors.verticalCenter: parent.verticalCenter
             }

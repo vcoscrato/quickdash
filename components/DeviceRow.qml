@@ -31,11 +31,8 @@ Rectangle {
 
     width: parent ? parent.width : 300
     radius: ThemeModule.Theme.borderRadiusSmall
-    color: rowMouse.containsMouse
-        ? ThemeModule.Theme.cardHover
-        : Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.18)
-    border.width: ThemeModule.Theme.borderWidth
-    border.color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.16)
+    color: rowMouse.containsMouse ? ThemeModule.Theme.cardHover : "transparent"
+    border.width: 0
     implicitHeight: headRow.implicitHeight + (expanded ? expandedColumn.implicitHeight + ThemeModule.Theme.spacingSmall : 0) + ThemeModule.Theme.spacingSmall * 2
 
     MouseArea {

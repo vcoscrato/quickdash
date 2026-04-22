@@ -17,22 +17,7 @@ Rectangle {
     width: parent ? parent.width : ThemeModule.Theme.sidebarIconSize
     height: ThemeModule.Theme.sidebarIconSize
     radius: 0
-    color: active ? Qt.rgba(ThemeModule.Theme.accent.r, ThemeModule.Theme.accent.g, ThemeModule.Theme.accent.b, 0.15) : (mouseArea.containsMouse ? ThemeModule.Theme.cardHover : "transparent")
-
-    // Left accent bar when active
-    Rectangle {
-        width: 3
-        height: parent.height * 0.6
-        radius: 1.5
-        color: ThemeModule.Theme.accent
-        anchors.left: parent.left
-        anchors.verticalCenter: parent.verticalCenter
-        opacity: root.active ? 1.0 : 0.0
-
-        Behavior on opacity {
-            NumberAnimation { duration: ThemeModule.Theme.animDuration; easing.type: Easing.OutCubic }
-        }
-    }
+    color: active ? ThemeModule.Theme.surface2 : (mouseArea.containsMouse ? ThemeModule.Theme.cardHover : "transparent")
 
     Column {
         width: parent.width

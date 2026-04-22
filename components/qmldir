@@ -4,7 +4,7 @@ DeviceRow 1.0 DeviceRow.qml
 DeviceSection 1.0 DeviceSection.qml
 IconButton 1.0 IconButton.qml
 InlineActionChip 1.0 InlineActionChip.qml
-ModeSlider 1.0 ModeSlider.qml
+ScanButton 1.0 ScanButton.qml
 PanelHeader 1.0 PanelHeader.qml
 SidebarIcon 1.0 SidebarIcon.qml
 StatusBadge 1.0 StatusBadge.qml

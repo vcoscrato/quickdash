@@ -11,50 +11,6 @@ Components.Card {
     collapsible: true
     property bool dashboardActive: true
 
-    function connectionHeadline() {
-        if (Services.NetworkService.networkMode === 1) {
-            return Services.NetworkService.wiredConnected
-                ? (Services.NetworkService.wiredConnectionName || "Ethernet connected")
-                : "Ethernet idle";
-        }
-
-        if (!Services.NetworkService.wifiOn) {
-            return "Wi-Fi radio is off";
-        }
-        if (Services.NetworkService.connecting) {
-            return "Joining " + Services.NetworkService.connectingSsid;
-        }
-        if (Services.NetworkService.currentConnectedWifi) {
-            return Services.NetworkService.currentConnectedWifi.ssid;
-        }
-        return "Wireless standby";
-    }
-
-    function connectionSubtitle() {
-        if (Services.NetworkService.networkMode === 1) {
-            return Services.NetworkService.wiredConnected
-                ? ((Services.NetworkService.wiredIp && Services.NetworkService.wiredIp !== "") ? "IP " + Services.NetworkService.wiredIp : "Cable link active")
-                : "Switch to Wi-Fi or plug in a cable.";
-        }
-
-        if (!Services.NetworkService.wifiOn) {
-            return "Turn it on here when you want to scan or reconnect.";
-        }
-        if (Services.NetworkService.connecting) {
-            return "NetworkManager is negotiating the connection.";
-        }
-        if (Services.NetworkService.currentConnectedWifi) {
-            return Services.NetworkService.connectedWifiSubtitle(Services.NetworkService.currentConnectedWifi);
-        }
-        if (Services.NetworkService.scanning) {
-            return "Scanning for nearby access points.";
-        }
-        return "Known and nearby networks are listed below.";
-    }
-
-    function modeChipText() {
-        return Services.NetworkService.networkMode === 0 ? "Wireless" : "Ethernet";
-    }
 
     onDashboardActiveChanged: {
         if (root.dashboardActive) {
@@ -76,73 +32,59 @@ Components.Card {
     }
 
     pinnedContent: [
-        Column {
+        // Ethernet Section
+        Components.DeviceRow {
+            visible: Services.NetworkService.wiredConnected
             width: parent.width
-            spacing: ThemeModule.Theme.spacingSmall
+            title: Services.NetworkService.wiredConnectionName || "Ethernet"
+            subtitle: Services.NetworkService.wiredIp || "Connected"
+            leadingIcon: "🔌"
+            primaryEnabled: false
+        },
 
-            Row {
-                width: parent.width
-                spacing: ThemeModule.Theme.spacingSmall
-
-                Components.ModeSlider {
-                    width: Services.NetworkService.networkMode === 0
-                        ? (parent.width - ThemeModule.Theme.spacingSmall) / 2
-                        : parent.width
-                    leftLabel: "Wireless"
-                    rightLabel: "Ethernet"
-                    selectedIndex: Services.NetworkService.networkMode
-                    activeColor: ThemeModule.Theme.sky
-                    onChanged: function(index) {
-                        Services.NetworkService.networkMode = index;
-                    }
-
-                    Behavior on width {
-                        NumberAnimation { duration: ThemeModule.Theme.animDuration; easing.type: Easing.OutCubic }
-                    }
-                }
-
-                Components.ModeSlider {
-                    visible: Services.NetworkService.networkMode === 0
-                    width: (parent.width - ThemeModule.Theme.spacingSmall) / 2
-                    leftLabel: "Off"
-                    rightLabel: "On"
-                    selectedIndex: Services.NetworkService.wifiOn ? 1 : 0
-                    activeColor: ThemeModule.Theme.sky
-                    onChanged: function(index) {
-                        Services.NetworkService.setWifiEnabled(index === 1);
-                    }
-                }
-            }
+        // Wi-Fi Header / Controls
+        Item {
+            width: parent.width
+            height: 36
 
             Text {
-                width: parent.width
-                text: root.connectionHeadline()
-                font.pixelSize: ThemeModule.Theme.fontSizeLarge
+                id: wifiLabel
+                text: "Wi-Fi"
+                font.pixelSize: ThemeModule.Theme.fontSizeNormal
                 font.family: ThemeModule.Theme.fontFamily
                 font.bold: true
                 color: ThemeModule.Theme.text
-                elide: Text.ElideRight
+                anchors.verticalCenter: parent.verticalCenter
             }
 
-            Text {
-                width: parent.width
-                text: root.connectionSubtitle()
-                wrapMode: Text.WordWrap
-                font.pixelSize: ThemeModule.Theme.fontSizeSmall
-                font.family: ThemeModule.Theme.fontFamily
-                color: ThemeModule.Theme.subtext
-            }
+            Row {
+                id: wifiControls
+                spacing: ThemeModule.Theme.spacingSmall
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right
 
-            Rectangle {
-                width: parent.width
-                height: 1
-                color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.14)
+                Components.ScanButton {
+                    visible: Services.NetworkService.wifiOn
+                    scanning: Services.NetworkService.scanning
+                    text: "Scanning..."
+                    onClicked: Services.NetworkService.startScan()
+                }
+
+                Components.TogglePill {
+                    height: 32
+                    label: Services.NetworkService.wifiOn ? "On" : "Off"
+                    checked: Services.NetworkService.wifiOn
+                    activeColor: ThemeModule.Theme.sky
+                    onToggled: function(state) {
+                        Services.NetworkService.setWifiEnabled(state)
+                    }
+                }
             }
         },
 
         // ── Connected WiFi row ──────────────────
         Components.DeviceRow {
-            visible: Services.NetworkService.networkMode === 0 && Services.NetworkService.currentConnectedWifi !== null
+            visible: Services.NetworkService.currentConnectedWifi !== null
             width: parent.width
             title: Services.NetworkService.currentConnectedWifi ? Services.NetworkService.currentConnectedWifi.ssid : ""
             subtitle: Services.NetworkService.connectedWifiSubtitle(Services.NetworkService.currentConnectedWifi)
@@ -150,7 +92,7 @@ Components.Card {
             showLock: Services.NetworkService.currentConnectedWifi ? Services.NetworkService.currentConnectedWifi.secure : false
             leadingIcon: ""
             primaryEnabled: false
-            badges: []
+            badges: [{ text: "Connected", tone: "success" }]
             actionChips: Services.NetworkService.currentConnectedWifi ? [
                 Services.NetworkService.autoconnectChipForRow(Services.NetworkService.currentConnectedWifi),
                 { text: "Disconnect", tone: "error", actionId: "disconnect" }
@@ -163,15 +105,11 @@ Components.Card {
         },
 
         // ── Connecting indicator ────────────────
-        Rectangle {
-            visible: Services.NetworkService.networkMode === 0
-                && Services.NetworkService.connecting
+        Item {
+            visible: Services.NetworkService.connecting
                 && Services.NetworkService.currentConnectedWifi === null
             width: parent.width
             height: 36
-            radius: ThemeModule.Theme.borderRadiusSmall
-            color: "transparent"
-            border.width: 0
 
             Row {
                 anchors.centerIn: parent
@@ -200,35 +138,24 @@ Components.Card {
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
-        },
-
-        Text {
-            visible: Services.NetworkService.networkMode === 0
-                && Services.NetworkService.currentConnectedWifi === null
-                && !Services.NetworkService.connecting
-                && (!root.collapsed || !Services.NetworkService.wifiOn)
-            text: Services.NetworkService.wifiOn ? "WiFi not connected" : "WiFi is off"
-            font.pixelSize: ThemeModule.Theme.fontSizeSmall
-            font.family: ThemeModule.Theme.fontFamily
-            color: ThemeModule.Theme.overlay
-            anchors.horizontalCenter: parent.horizontalCenter
-        },
-
+        }
     ]
 
-    Column {
+    content: [
+        Column {
+            visible: Services.NetworkService.wifiOn
         width: parent.width
         spacing: ThemeModule.Theme.spacingSmall
 
         Components.DeviceSection {
-            visible: Services.NetworkService.networkMode === 0 && Services.NetworkService.knownRows.length > 0
+            visible: Services.NetworkService.otherWifiRows.length > 0
             width: parent.width
-            title: "Known"
-            count: Services.NetworkService.knownRows.length
+            title: "Nearby Networks"
+            count: Services.NetworkService.otherWifiRows.length
         }
 
         Repeater {
-            model: Services.NetworkService.networkMode === 0 ? Services.NetworkService.knownRows : []
+            model: Services.NetworkService.otherWifiRows
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.ssid
@@ -240,7 +167,7 @@ Components.Card {
                 signalLevel: modelData.signal
                 showLock: modelData.secure
                 leadingIcon: ""
-                badges: []
+                badges: modelData.known ? [{ text: "Known", tone: "neutral" }] : []
                 expanded: Services.NetworkService.passwordRowSsid === modelData.ssid
                 primaryEnabled: !Services.NetworkService.connecting
                 opacity: Services.NetworkService.connecting && Services.NetworkService.connectingSsid !== modelData.ssid ? 0.5 : 1.0
@@ -259,47 +186,6 @@ Components.Card {
                     if (actionId === "autoconnect") Services.NetworkService.onToggleAutoconnect(modelData);
                     if (actionId === "forget") Services.NetworkService.onForgetClicked(modelData.ssid);
                 }
-
-                Text {
-                    visible: Services.NetworkService.passwordRowSsid === modelData.ssid
-                    text: Services.NetworkService.connectErrorSsid === modelData.ssid ? Services.NetworkService.connectError : ""
-                    font.pixelSize: 10
-                    font.family: ThemeModule.Theme.fontFamily
-                    color: ThemeModule.Theme.error
-                }
-
-                Behavior on opacity {
-                    NumberAnimation { duration: ThemeModule.Theme.animDuration }
-                }
-            }
-        }
-
-        Components.DeviceSection {
-            visible: Services.NetworkService.networkMode === 0 && Services.NetworkService.availableRows.length > 0
-            width: parent.width
-            title: "Available"
-            count: Services.NetworkService.availableRows.length
-        }
-
-        Repeater {
-            model: Services.NetworkService.networkMode === 0 ? Services.NetworkService.availableRows : []
-            delegate: Components.DeviceRow {
-                id: availableDelegate
-                width: parent.width
-                title: modelData.ssid
-                subtitle: {
-                    if (Services.NetworkService.connecting && Services.NetworkService.connectingSsid === modelData.ssid)
-                        return "Connecting...";
-                    return modelData.signal + "%";
-                }
-                signalLevel: modelData.signal
-                showLock: modelData.secure
-                leadingIcon: ""
-                badges: []
-                expanded: Services.NetworkService.passwordRowSsid === modelData.ssid
-                primaryEnabled: !Services.NetworkService.connecting
-                opacity: Services.NetworkService.connecting && Services.NetworkService.connectingSsid !== modelData.ssid ? 0.5 : 1.0
-                onPrimaryTriggered: Services.NetworkService.onRowPrimary(modelData)
 
                 Rectangle {
                     visible: Services.NetworkService.passwordRowSsid === modelData.ssid
@@ -324,14 +210,12 @@ Components.Card {
                         Keys.onReturnPressed: Services.NetworkService.requestConnect(modelData, Services.NetworkService.passwordText)
                         Keys.onEnterPressed: Services.NetworkService.requestConnect(modelData, Services.NetworkService.passwordText)
 
-                        // Auto-focus when password field becomes visible
                         Component.onCompleted: {
                             if (Services.NetworkService.passwordRowSsid === modelData.ssid)
                                 passwordInput.forceActiveFocus();
                         }
                     }
 
-                    // Watch for visibility changes to auto-focus
                     onVisibleChanged: {
                         if (visible)
                             passwordInput.forceActiveFocus();
@@ -370,84 +254,13 @@ Components.Card {
         }
 
         Text {
-            visible: Services.NetworkService.networkMode === 0 && Services.NetworkService.availableRows.length === 0 && Services.NetworkService.knownRows.length === 0 && Services.NetworkService.wifiOn
-            text: "No known or scanned WiFi networks yet"
+            visible: Services.NetworkService.otherWifiRows.length === 0 && Services.NetworkService.wifiOn && !Services.NetworkService.scanning
+            text: "No networks found"
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily
             color: ThemeModule.Theme.overlay
             anchors.horizontalCenter: parent.horizontalCenter
         }
-
-        // ── Scan button with proper disabled styling ──
-        Rectangle {
-            visible: Services.NetworkService.networkMode === 0
-            width: parent.width
-            height: 32
-            radius: ThemeModule.Theme.borderRadiusSmall
-            color: scanMouse.containsMouse && scanMouse.enabled ? ThemeModule.Theme.cardHover : ThemeModule.Theme.card
-            border.width: 1
-            border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.3)
-            opacity: (Services.NetworkService.wifiOn && !Services.NetworkService.scanning) ? 1.0 : 0.5
-
-            Behavior on opacity {
-                NumberAnimation { duration: ThemeModule.Theme.animDuration }
-            }
-
-            Text {
-                anchors.centerIn: parent
-                text: Services.NetworkService.scanning ? "⏳ Refreshing the airwaves..." : "🔍 Refresh nearby networks"
-                font.pixelSize: ThemeModule.Theme.fontSizeSmall
-                font.family: ThemeModule.Theme.fontFamily
-                color: Services.NetworkService.wifiOn ? ThemeModule.Theme.sky : ThemeModule.Theme.overlay
-            }
-
-            MouseArea {
-                id: scanMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                enabled: Services.NetworkService.wifiOn && !Services.NetworkService.scanning
-                onClicked: {
-                    Services.NetworkService.startScan();
-                }
-            }
-        }
-
-        Rectangle {
-            visible: Services.NetworkService.networkMode === 1
-            width: parent.width
-            radius: ThemeModule.Theme.borderRadiusSmall
-            color: "transparent"
-            border.width: 0
-            implicitHeight: ethernetInfoColumn.implicitHeight + ThemeModule.Theme.spacingSmall * 2
-
-            Column {
-                id: ethernetInfoColumn
-                anchors.fill: parent
-                anchors.margins: ThemeModule.Theme.spacingSmall
-                spacing: ThemeModule.Theme.spacingTiny
-
-                Text {
-                    text: "Connection: " + (Services.NetworkService.wiredConnectionName || "None")
-                    font.pixelSize: 10
-                    font.family: ThemeModule.Theme.fontFamily
-                    color: ThemeModule.Theme.subtext
-                }
-
-                Text {
-                    text: "IP: " + (Services.NetworkService.wiredIp && Services.NetworkService.wiredIp !== "" ? Services.NetworkService.wiredIp : "N/A")
-                    font.pixelSize: 10
-                    font.family: ThemeModule.Theme.fontFamily
-                    color: ThemeModule.Theme.subtext
-                }
-
-                Text {
-                    text: "State: " + (Services.NetworkService.wiredConnected ? "Connected" : "Disconnected")
-                    font.pixelSize: 10
-                    font.family: ThemeModule.Theme.fontFamily
-                    color: ThemeModule.Theme.subtext
-                }
-            }
-        }
     }
+    ]
 }
