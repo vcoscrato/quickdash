@@ -85,7 +85,7 @@ I run QuickDash inside a Hyprland special workspace alongside a terminal, so I c
 bind = SUPER, GRAVE, togglespecialworkspace, dash
 
 # Auto-launch QuickDash + a terminal the first time the workspace opens
-workspace = special:dash, on-created-empty: quickdash & kitty
+workspace = special:dash, on-created-empty:bash -lc "quickshell -p ~/.config/arch-config/quickdash & wait 0.1 & kitty"
 ```
 
 Reload Hyprland and `Super + `` will toggle the whole thing.
