@@ -34,6 +34,13 @@ PanelWindow {
     // Only show if there are active popups
     visible: Services.SystemState.activePopups.length > 0
 
+    onVisibleChanged: {
+        if (Services.SystemState.debugLogging) {
+            console.log("[QuickDash][NotificationToastWindow] visible=" + visible
+                + " popupCount=" + Services.SystemState.activePopups.length);
+        }
+    }
+
     Column {
         id: toastColumn
         width: parent.width

@@ -1,6 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+import Quickshell
+import Quickshell.Services.SystemTray
 import "../theme" as ThemeModule
 import "../components" as Components
 import "../services" as Services
@@ -15,6 +17,19 @@ Rectangle {
     property bool dashboardActive: true
     
     property string activePanel: ""
+    readonly property bool sidebarShowSystemTray: config ? (config.sidebarSystemTray !== undefined ? config.sidebarSystemTray : true) : true
+
+    onActivePanelChanged: {
+        middleFlickable.contentY = 0;
+        scrollResetTimer.restart();
+    }
+
+    Timer {
+        id: scrollResetTimer
+        interval: ThemeModule.Theme.animDuration + 50
+        repeat: false
+        onTriggered: middleFlickable.contentY = 0
+    }
 
     // ── Default config values ──
     readonly property var defaultTopAnchor: ["clock"]
@@ -35,9 +50,47 @@ Rectangle {
         { "widget": "powerMenu",       "icon": "⏻" }
     ]
 
-    property var topAnchorWidgets: config && config.topAnchor ? config.topAnchor : defaultTopAnchor
-    property var bottomAnchorWidgets: config && config.bottomAnchor ? config.bottomAnchor : defaultBottomAnchor
-    property var middleDefaultWidgets: config && config.middleDefault ? config.middleDefault : defaultMiddle
+    function filterSidebarSystemTrayWidgets(list) {
+        if (!dashboard.sidebarShowSystemTray || !list || !Array.isArray(list)) {
+            return list;
+        }
+
+        var filtered = [];
+        for (var i = 0; i < list.length; i++) {
+            var item = list[i];
+
+            if (typeof item === "string") {
+                if (item !== "systemTray") {
+                    filtered.push(item);
+                }
+                continue;
+            }
+
+            if (item && typeof item === "object" && item.group === true && Array.isArray(item.items)) {
+                var groupItems = [];
+                for (var j = 0; j < item.items.length; j++) {
+                    if (item.items[j] !== "systemTray") {
+                        groupItems.push(item.items[j]);
+                    }
+                }
+
+                if (groupItems.length === 1) {
+                    filtered.push(groupItems[0]);
+                } else if (groupItems.length > 1) {
+                    filtered.push({ group: true, items: groupItems });
+                }
+                continue;
+            }
+
+            filtered.push(item);
+        }
+
+        return filtered;
+    }
+
+    property var topAnchorWidgets: filterSidebarSystemTrayWidgets(config && config.topAnchor ? config.topAnchor : defaultTopAnchor)
+    property var bottomAnchorWidgets: filterSidebarSystemTrayWidgets(config && config.bottomAnchor ? config.bottomAnchor : defaultBottomAnchor)
+    property var middleDefaultWidgets: filterSidebarSystemTrayWidgets(config && config.middleDefault ? config.middleDefault : defaultMiddle)
     property var sidebarItems: config && config.sidebar ? config.sidebar : defaultSidebar
 
     function widgetSource(name) {
@@ -81,9 +134,9 @@ Rectangle {
     }
 
     function getMicroStatus(widget) {
-        if (widget === "audioControl") return Services.AudioService.outputVolumePercent;
-        if (widget === "audioInputControl") return Services.AudioService.inputVolumePercent;
-        if (widget === "networkPanel") return Services.NetworkService.currentConnectedWifi ? "●" : "";
+        if (widget === "audioControl") return Services.AudioService.outputVolumePercent + "%";
+        if (widget === "audioInputControl") return Services.AudioService.inputVolumePercent + "%";
+        if (widget === "networkPanel") return "";
         if (widget === "bluetoothPanel") {
             var n = Services.BluetoothService.connectedRows.length;
             return n > 0 ? n.toString() : "";
@@ -102,16 +155,19 @@ Rectangle {
         return "";
     }
 
-    Row {
+    Item {
         anchors.fill: parent
-        anchors.margins: ThemeModule.Theme.spacingMedium
 
         // ── Sidebar Rail ──
         Item {
+            id: sidebarRail
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
             width: ThemeModule.Theme.sidebarWidth
-            height: parent.height
 
             Column {
+                id: sidebarTopCol
                 anchors.top: parent.top
                 width: parent.width
                 spacing: ThemeModule.Theme.spacingSmall
@@ -158,6 +214,7 @@ Rectangle {
             }
 
             Column {
+                id: sidebarBottomCol
                 anchors.bottom: parent.bottom
                 width: parent.width
                 spacing: ThemeModule.Theme.spacingSmall
@@ -189,68 +246,259 @@ Rectangle {
                     }
                 }
             }
+
+            // ── System Tray (centered in the free zone between top and bottom icons) ──
+            Item {
+                id: sidebarTrayZone
+                anchors.top: sidebarTopCol.bottom
+                anchors.bottom: sidebarBottomCol.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                visible: dashboard.sidebarShowSystemTray && sidebarTrayRepeater.count > 0
+
+                Column {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: ThemeModule.Theme.spacingTiny
+
+                    Repeater {
+                        id: sidebarTrayRepeater
+                        model: SystemTray.items
+                        delegate: Item {
+                            id: sidebarTrayDelegate
+                            required property var modelData
+                            width: ThemeModule.Theme.sidebarIconSize
+                            height: ThemeModule.Theme.sidebarIconSize
+
+                            Rectangle {
+                                id: trayIconRect
+                                anchors.fill: parent
+                                color: sidebarTrayMouse.containsMouse ? ThemeModule.Theme.cardHover : "transparent"
+
+                                Image {
+                                    id: sidebarTrayImg
+                                    anchors.centerIn: parent
+                                    width: 18
+                                    height: 18
+                                    property string iconPath: {
+                                        var icon = sidebarTrayDelegate.modelData.icon;
+                                        if (!icon) return "";
+                                        var s = icon.toString();
+                                        var pi = s.indexOf("?path=");
+                                        return pi !== -1 ? s.substring(0, pi) : s;
+                                    }
+                                    visible: iconPath !== ""
+                                    source: iconPath
+                                    sourceSize: Qt.size(18, 18)
+                                    fillMode: Image.PreserveAspectFit
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "●"
+                                    font.pixelSize: 10
+                                    color: ThemeModule.Theme.subtext
+                                    visible: !sidebarTrayImg.visible
+                                }
+
+                                ToolTip {
+                                    visible: sidebarTrayMouse.containsMouse
+                                    text: sidebarTrayDelegate.modelData.tooltipTitle || sidebarTrayDelegate.modelData.title || sidebarTrayDelegate.modelData.id || ""
+                                    delay: 150
+                                }
+
+                                QsMenuAnchor {
+                                    id: sidebarTrayMenu
+                                    menu: sidebarTrayDelegate.modelData.menu
+                                    anchor.item: trayIconRect
+                                    anchor.edges: Edges.Right
+                                    anchor.gravity: Edges.Right
+                                }
+
+                                MouseArea {
+                                    id: sidebarTrayMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    onClicked: function(mouse) {
+                                        if (mouse.button === Qt.LeftButton) {
+                                            if (sidebarTrayDelegate.modelData.onlyMenu && sidebarTrayDelegate.modelData.hasMenu) {
+                                                sidebarTrayMenu.open();
+                                            } else {
+                                                sidebarTrayDelegate.modelData.activate();
+                                            }
+                                        } else if (mouse.button === Qt.RightButton) {
+                                            if (sidebarTrayDelegate.modelData.hasMenu) {
+                                                sidebarTrayMenu.open();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // ── Separator ──
         Rectangle {
+            id: mainSeparator
+            anchors.left: sidebarRail.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
             width: ThemeModule.Theme.separatorThickness
-            height: parent.height
             color: ThemeModule.Theme.separator
-            anchors.margins: ThemeModule.Theme.spacingSmall
         }
 
-        Item { width: ThemeModule.Theme.spacingSmall; height: 1 }
+        // ── Content Area ──
+        Item {
+            id: contentArea
+            anchors.left: mainSeparator.right
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.topMargin: ThemeModule.Theme.spacingMedium
+            anchors.rightMargin: ThemeModule.Theme.spacingMedium
+            anchors.leftMargin: ThemeModule.Theme.spacingMedium
+            anchors.bottomMargin: ThemeModule.Theme.spacingMedium
 
-        // ── Content Column ──
-        Column {
-            width: parent.width - ThemeModule.Theme.sidebarWidth - ThemeModule.Theme.separatorThickness - ThemeModule.Theme.spacingSmall
-            height: parent.height
-
-            // Top Anchor
+            // Top block: topAnchor + spacer + miniPlayer
             Column {
-                id: topAnchorColumn
+                id: topBlock
+                anchors.top: parent.top
                 width: parent.width
-                spacing: ThemeModule.Theme.spacingMedium
-                Repeater {
-                    model: dashboard.topAnchorWidgets
-                    delegate: Item {
-                        id: topAnchorSlot
-                        required property var modelData
-                        readonly property bool isGroup: typeof topAnchorSlot.modelData === "object" && topAnchorSlot.modelData !== null && topAnchorSlot.modelData.group === true
-                        width: parent.width
-                        height: topAnchorSlot.isGroup ? topGroupRow.implicitHeight : topSingleLoader.height
+                spacing: 0
 
-                        Loader {
-                            id: topSingleLoader
+                // Top Anchor
+                Column {
+                    id: topAnchorColumn
+                    width: parent.width
+                    spacing: ThemeModule.Theme.spacingXL
+                    Repeater {
+                        model: dashboard.topAnchorWidgets
+                        delegate: Item {
+                            id: topAnchorSlot
+                            required property var modelData
+                            readonly property bool isGroup: typeof topAnchorSlot.modelData === "object" && topAnchorSlot.modelData !== null && topAnchorSlot.modelData.group === true
                             width: parent.width
-                            visible: !topAnchorSlot.isGroup
-                            active: !topAnchorSlot.isGroup
-                                && dashboard.widgetSource(topAnchorSlot.modelData) !== ""
-                                && dashboard.isWidgetSupported(topAnchorSlot.modelData)
-                            source: active ? dashboard.widgetSource(topAnchorSlot.modelData) : ""
-                            onLoaded: {
-                                if (item && "dashboardActive" in item) {
-                                    item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                            height: topAnchorSlot.isGroup ? topGroupRow.implicitHeight : topSingleLoader.height
+
+                            Loader {
+                                id: topSingleLoader
+                                width: parent.width
+                                visible: !topAnchorSlot.isGroup
+                                active: !topAnchorSlot.isGroup
+                                    && dashboard.widgetSource(topAnchorSlot.modelData) !== ""
+                                    && dashboard.isWidgetSupported(topAnchorSlot.modelData)
+                                source: active ? dashboard.widgetSource(topAnchorSlot.modelData) : ""
+                                onLoaded: {
+                                    if (item && "dashboardActive" in item) {
+                                        item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                                    }
+                                }
+                            }
+
+                            Row {
+                                id: topGroupRow
+                                width: parent.width
+                                visible: topAnchorSlot.isGroup
+                                spacing: ThemeModule.Theme.spacingSmall
+                                property int groupCount: topAnchorSlot.isGroup ? topAnchorSlot.modelData.items.length : 1
+                                Repeater {
+                                    model: topAnchorSlot.isGroup ? topAnchorSlot.modelData.items : []
+                                    delegate: Loader {
+                                        required property var modelData
+                                        width: (parent.width - ThemeModule.Theme.spacingSmall * (parent.groupCount - 1)) / parent.groupCount
+                                        active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
+                                        source: active ? dashboard.widgetSource(modelData) : ""
+                                        onLoaded: {
+                                            if (item && "dashboardActive" in item) {
+                                                item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
+                }
 
-                        Row {
-                            id: topGroupRow
+                Item { width: 1; height: ThemeModule.Theme.spacingXL }
+
+                // Mini Player (auto-appears if player is active)
+                Widgets.MiniPlayer {
+                    id: miniPlayer
+                    width: parent.width
+                    dashboardActive: dashboard.dashboardActive
+                    onClicked: {
+                        if (dashboard.activePanel === "nowPlaying") dashboard.activePanel = "";
+                        else dashboard.activePanel = "nowPlaying";
+                    }
+                }
+
+                Item {
+                    width: 1
+                    height: miniPlayer.hasPlayer ? ThemeModule.Theme.spacingXL : 0
+                    Behavior on height { NumberAnimation { duration: ThemeModule.Theme.animDuration } }
+                }
+            }
+
+            // Bottom block: spacer + bottomAnchor
+            Column {
+                id: bottomBlock
+                anchors.bottom: parent.bottom
+                width: parent.width
+                spacing: 0
+
+                Item { width: 1; height: ThemeModule.Theme.spacingXL }
+
+                Column {
+                    id: bottomAnchorColumn
+                    width: parent.width
+                    spacing: ThemeModule.Theme.spacingXL
+                    Repeater {
+                        model: dashboard.bottomAnchorWidgets
+                        delegate: Item {
+                            id: bottomAnchorSlot
+                            required property var modelData
+                            readonly property bool isGroup: typeof bottomAnchorSlot.modelData === "object" && bottomAnchorSlot.modelData !== null && bottomAnchorSlot.modelData.group === true
                             width: parent.width
-                            visible: topAnchorSlot.isGroup
-                            spacing: ThemeModule.Theme.spacingSmall
-                            property int groupCount: topAnchorSlot.isGroup ? topAnchorSlot.modelData.items.length : 1
-                            Repeater {
-                                model: topAnchorSlot.isGroup ? topAnchorSlot.modelData.items : []
-                                delegate: Loader {
-                                    required property var modelData
-                                    width: (parent.width - ThemeModule.Theme.spacingSmall * (parent.groupCount - 1)) / parent.groupCount
-                                    active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
-                                    source: active ? dashboard.widgetSource(modelData) : ""
-                                    onLoaded: {
-                                        if (item && "dashboardActive" in item) {
-                                            item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                            height: bottomAnchorSlot.isGroup ? bottomGroupRow.implicitHeight : bottomSingleLoader.height
+
+                            Loader {
+                                id: bottomSingleLoader
+                                width: parent.width
+                                visible: !bottomAnchorSlot.isGroup
+                                active: !bottomAnchorSlot.isGroup
+                                    && dashboard.widgetSource(bottomAnchorSlot.modelData) !== ""
+                                    && dashboard.isWidgetSupported(bottomAnchorSlot.modelData)
+                                source: active ? dashboard.widgetSource(bottomAnchorSlot.modelData) : ""
+                                onLoaded: {
+                                    if (item && "dashboardActive" in item) {
+                                        item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                                    }
+                                }
+                            }
+
+                            Row {
+                                id: bottomGroupRow
+                                width: parent.width
+                                visible: bottomAnchorSlot.isGroup
+                                spacing: ThemeModule.Theme.spacingSmall
+                                property int groupCount: bottomAnchorSlot.isGroup ? bottomAnchorSlot.modelData.items.length : 1
+                                Repeater {
+                                    model: bottomAnchorSlot.isGroup ? bottomAnchorSlot.modelData.items : []
+                                    delegate: Loader {
+                                        required property var modelData
+                                        width: (parent.width - ThemeModule.Theme.spacingSmall * (parent.groupCount - 1)) / parent.groupCount
+                                        active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
+                                        source: active ? dashboard.widgetSource(modelData) : ""
+                                        onLoaded: {
+                                            if (item && "dashboardActive" in item) {
+                                                item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
+                                            }
                                         }
                                     }
                                 }
@@ -260,25 +508,12 @@ Rectangle {
                 }
             }
 
-            Item { width: 1; height: ThemeModule.Theme.spacingMedium }
-
-            // Mini Player (auto-appears if player is active)
-            Widgets.MiniPlayer {
-                id: miniPlayer
-                dashboardActive: dashboard.dashboardActive
-                onClicked: {
-                    if (dashboard.activePanel === "nowPlaying") dashboard.activePanel = "";
-                    else dashboard.activePanel = "nowPlaying";
-                }
-            }
-
-            Item { width: 1; height: miniPlayer.hasPlayer ? ThemeModule.Theme.spacingMedium : 0; Behavior on height { NumberAnimation { duration: ThemeModule.Theme.animDuration } } }
-
-            // ── Scrollable Middle Zone ──
+            // ── Scrollable Middle Zone ── (anchored between topBlock and bottomBlock)
             Flickable {
                 id: middleFlickable
+                anchors.top: topBlock.bottom
+                anchors.bottom: bottomBlock.top
                 width: parent.width
-                height: parent.height - topAnchorColumn.height - (miniPlayer.hasPlayer ? miniPlayer.height + ThemeModule.Theme.spacingMedium : 0) - bottomAnchorColumn.height - ThemeModule.Theme.spacingMedium * 3
                 contentHeight: middleContentColumn.height
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -297,13 +532,15 @@ Rectangle {
                 Item {
                     id: middleContentColumn
                     width: middleFlickable.width
-                    height: Math.max(defaultMiddleColumn.height, activePanelLoaderContainer.height)
+                    height: dashboard.activePanel !== ""
+                        ? activePanelLoaderContainer.height
+                        : defaultMiddleColumn.height
 
                     // Default content
                     Column {
                         id: defaultMiddleColumn
                         width: parent.width
-                        spacing: ThemeModule.Theme.spacingMedium
+                        spacing: ThemeModule.Theme.spacingXL
                         opacity: dashboard.activePanel === "" ? 1.0 : 0.0
                         visible: opacity > 0
 
@@ -364,13 +601,13 @@ Rectangle {
                     Item {
                         id: activePanelLoaderContainer
                         width: parent.width
-                        height: activePanelLoader.height
-                        
+                        height: dashboard.activePanel !== "" ? activePanelLoader.height : 0
+
                         // Slide-in animation
                         x: dashboard.activePanel !== "" ? 0 : -20
                         opacity: dashboard.activePanel !== "" ? 1.0 : 0.0
                         visible: opacity > 0
-                        
+
                         Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                         Behavior on opacity { NumberAnimation { duration: 200 } }
 
@@ -381,10 +618,10 @@ Rectangle {
                             source: dashboard.activePanel !== "" && dashboard.isWidgetSupported(dashboard.activePanel)
                                 ? dashboard.widgetSource(dashboard.activePanel)
                                 : ""
-                            
+
                             onLoaded: {
                                 if (!item) return;
-                                
+
                                 if ("dashboardActive" in item) {
                                     item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive && dashboard.activePanel !== ""; });
                                 }
@@ -392,68 +629,11 @@ Rectangle {
                                     item.collapsible = false;
                                     item.collapsed = false;
                                 }
-                                
-                                
+
                                 // Quick switch arrays for audio
                                 if (dashboard.activePanel === "audioControl") item.quickSwitchDevices = dashboard.config.audioQuickSwitch || [];
                                 if (dashboard.activePanel === "audioInputControl") item.quickSwitchDevices = dashboard.config.audioInputQuickSwitch || [];
                                 if (dashboard.activePanel === "keyboardLayout") item.keyboardLayouts = dashboard.config.keyboardLayouts || ["us"];
-                            }
-                        }
-                    }
-                }
-            }
-
-            Item { width: 1; height: ThemeModule.Theme.spacingMedium }
-
-            // Bottom Anchor
-            Column {
-                id: bottomAnchorColumn
-                width: parent.width
-                spacing: ThemeModule.Theme.spacingMedium
-                Repeater {
-                    model: dashboard.bottomAnchorWidgets
-                    delegate: Item {
-                        id: bottomAnchorSlot
-                        required property var modelData
-                        readonly property bool isGroup: typeof bottomAnchorSlot.modelData === "object" && bottomAnchorSlot.modelData !== null && bottomAnchorSlot.modelData.group === true
-                        width: parent.width
-                        height: bottomAnchorSlot.isGroup ? bottomGroupRow.implicitHeight : bottomSingleLoader.height
-
-                        Loader {
-                            id: bottomSingleLoader
-                            width: parent.width
-                            visible: !bottomAnchorSlot.isGroup
-                            active: !bottomAnchorSlot.isGroup
-                                && dashboard.widgetSource(bottomAnchorSlot.modelData) !== ""
-                                && dashboard.isWidgetSupported(bottomAnchorSlot.modelData)
-                            source: active ? dashboard.widgetSource(bottomAnchorSlot.modelData) : ""
-                            onLoaded: {
-                                if (item && "dashboardActive" in item) {
-                                    item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
-                                }
-                            }
-                        }
-
-                        Row {
-                            id: bottomGroupRow
-                            width: parent.width
-                            visible: bottomAnchorSlot.isGroup
-                            spacing: ThemeModule.Theme.spacingSmall
-                            property int groupCount: bottomAnchorSlot.isGroup ? bottomAnchorSlot.modelData.items.length : 1
-                            Repeater {
-                                model: bottomAnchorSlot.isGroup ? bottomAnchorSlot.modelData.items : []
-                                delegate: Loader {
-                                    required property var modelData
-                                    width: (parent.width - ThemeModule.Theme.spacingSmall * (parent.groupCount - 1)) / parent.groupCount
-                                    active: dashboard.widgetSource(modelData) !== "" && dashboard.isWidgetSupported(modelData)
-                                    source: active ? dashboard.widgetSource(modelData) : ""
-                                    onLoaded: {
-                                        if (item && "dashboardActive" in item) {
-                                            item.dashboardActive = Qt.binding(function() { return dashboard.dashboardActive; });
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

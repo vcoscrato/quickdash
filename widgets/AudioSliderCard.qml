@@ -39,7 +39,7 @@ Components.Card {
     property int localVolumePercent: 0
 
     // ── Node list ──────────────────────────────────────────
-    readonly property var deviceNodes: {
+    readonly property var deviceEntries: {
         if (!root.dashboardActive || !Pipewire.nodes || !Pipewire.nodes.values)
             return [];
 
@@ -50,40 +50,75 @@ Components.Card {
             if (!node)
                 continue;
             if (root.isOutput) {
-                if ((node.isSink || false) && !node.isStream && root.matchesFilter(node))
-                    result.push(node);
+                if ((node.isSink || false) && !node.isStream) {
+                    var outputEntry = root.buildDeviceEntry(node);
+                    if (outputEntry)
+                        result.push(outputEntry);
+                }
             } else {
-                if (root.isSourceNode(node) && root.matchesFilter(node))
-                    result.push(node);
+                if (root.isSourceNode(node)) {
+                    var inputEntry = root.buildDeviceEntry(node);
+                    if (inputEntry)
+                        result.push(inputEntry);
+                }
             }
         }
+
+        if (root.quickSwitchDevices && root.quickSwitchDevices.length > 0) {
+            result.sort(function(a, b) {
+                if (a.matchIndex !== b.matchIndex)
+                    return a.matchIndex - b.matchIndex;
+                return a.rawLabel.localeCompare(b.rawLabel);
+            });
+        }
+
         return result;
     }
 
     // ── Filtering ──────────────────────────────────────────
     // Output uses exact substring match; Input uses case-insensitive match.
-    // Both behaviors are preserved exactly from the original widgets.
-    function matchesFilter(node) {
+    // When a configured entry matches, use that configured string as the picker label.
+    function deviceMatch(node) {
+        var rawLabel = node.description || node.name || "Unknown";
+
         if (!root.quickSwitchDevices || root.quickSwitchDevices.length === 0)
-            return true;
+            return { matches: true, label: rawLabel, matchIndex: -1 };
 
         if (root.isOutput) {
             var desc = node.description || "";
             for (var i = 0; i < root.quickSwitchDevices.length; i++) {
-                if (desc.indexOf(root.quickSwitchDevices[i]) !== -1)
-                    return true;
+                var outputLabel = (root.quickSwitchDevices[i] || "").toString();
+                if (outputLabel !== "" && desc.indexOf(outputLabel) !== -1)
+                    return { matches: true, label: outputLabel, matchIndex: i };
             }
-            return false;
+            return { matches: false, label: "", matchIndex: -1 };
         }
 
         // Input: case-insensitive with trim
         var descLower = (node.description || node.name || "").toLowerCase();
         for (var j = 0; j < root.quickSwitchDevices.length; j++) {
             var needle = (root.quickSwitchDevices[j] || "").toString().trim().toLowerCase();
-            if (needle !== "" && descLower.indexOf(needle) !== -1)
-                return true;
+            if (needle !== "") {
+                var inputLabel = (root.quickSwitchDevices[j] || "").toString().trim();
+                if (descLower.indexOf(needle) !== -1)
+                    return { matches: true, label: inputLabel || rawLabel, matchIndex: j };
+            }
         }
-        return false;
+        return { matches: false, label: "", matchIndex: -1 };
+    }
+
+    function buildDeviceEntry(node) {
+        var match = root.deviceMatch(node);
+        if (!match.matches)
+            return null;
+
+        var rawLabel = node.description || node.name || "Unknown";
+        return {
+            node: node,
+            label: match.label || rawLabel,
+            rawLabel: rawLabel,
+            matchIndex: match.matchIndex
+        };
     }
 
     // Source node detection — only used for input mode.
@@ -207,12 +242,13 @@ Components.Card {
             spacing: ThemeModule.Theme.spacingTiny
 
             Repeater {
-                model: root.deviceNodes
+                model: root.deviceEntries
 
                 delegate: Rectangle {
                     id: deviceDelegate
                     required property var modelData
-                    property var node: deviceDelegate.modelData
+                    property var entry: deviceDelegate.modelData
+                    property var node: deviceDelegate.entry.node
                     width: parent.width
                     height: 32
                     radius: ThemeModule.Theme.borderRadiusSmall
@@ -243,7 +279,7 @@ Components.Card {
                         }
 
                         Text {
-                            text: deviceDelegate.node.description || deviceDelegate.node.name || "Unknown"
+                            text: deviceDelegate.entry.label
                             font.pixelSize: ThemeModule.Theme.fontSizeSmall
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.text

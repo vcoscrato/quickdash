@@ -201,14 +201,17 @@ Components.Card {
                 width: root.wideLayout
                     ? parent.width - Math.floor((parent.width - ThemeModule.Theme.spacingMedium) * 0.44) - ThemeModule.Theme.spacingMedium
                     : parent.width
-                height: 248
+                implicitHeight: clipboardContentCol.implicitHeight + ThemeModule.Theme.spacingSmall * 2
                 radius: ThemeModule.Theme.borderRadiusSmall
                 color: Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.32)
                 border.width: 1
                 border.color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.25)
 
                 Column {
-                    anchors.fill: parent
+                    id: clipboardContentCol
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.margins: ThemeModule.Theme.spacingSmall
                     spacing: ThemeModule.Theme.spacingSmall
 
@@ -278,14 +281,10 @@ Components.Card {
 
                     ListView {
                         width: parent.width
-                        height: parent.height - 50
-                        clip: true
+                        height: contentHeight
+                        clip: false
                         spacing: ThemeModule.Theme.spacingTiny
                         model: Services.ClipboardService.history
-
-                        ScrollBar.vertical: ScrollBar {
-                            policy: ScrollBar.AsNeeded
-                        }
 
                         delegate: Rectangle {
                             width: ListView.view.width

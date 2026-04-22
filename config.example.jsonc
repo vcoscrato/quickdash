@@ -110,15 +110,14 @@
     //
     // QuickDash uses three anchored zones and a collapsible sidebar.
     //
-    // ┌────────────────────────┐
-    // │      topAnchor         │  fixed strip at the top
-    // ├───────┬────────────────┤
-    // │       │  middleDefault │  fills center when no sidebar panel is open
-    // │sidebar│────────────────│
-    // │ icons │   (panel)      │  sidebar panel fills here when open
-    // ├───────┴────────────────┤
-    // │     bottomAnchor       │  fixed strip at the bottom
-    // └────────────────────────┘
+    // ┌───────┬────────────────┐
+    // │       │    topAnchor   │  fixed strip at the top
+    // │       │────────────────┤
+    // │sidebar│  middleDefault │  fills center when no sidebar panel is open
+    // │ icons │     (panel)    │  sidebar panel fills here when open
+    // │       │────────────────┤
+    // │       │  bottomAnchor  │  fixed strip at the bottom
+    // └───────┴────────────────┘
     //
     // Available widget names:
     //
@@ -161,5 +160,16 @@
         { "widget": "systemMonitor",     "icon": "📊" },
         { "widget": "configPanel",       "icon": "⚙" },
         { "widget": "powerMenu",         "icon": "⏻" }
-    ]
+    ],
+
+    // ── Sidebar system tray ───────────────────────────────────────────────────
+    //
+    // When true (default), system tray icons move into the sidebar rail,
+    // centered between the main widget icons and the config/power icons.
+    // Any `systemTray` entries in `topAnchor`, `middleDefault`, or
+    // `bottomAnchor` are ignored while this mode is enabled.
+    // Left-click activates the item; right-click opens its context menu.
+    // Set to false to keep using the normal `systemTray` widget placement.
+    //
+    "sidebarSystemTray": true
 }

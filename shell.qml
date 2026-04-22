@@ -318,8 +318,17 @@ ShellRoot {
     readonly property bool dashboardVisible: dashWindow.backingWindowVisible && !dashWindow.minimized
     readonly property bool dashboardActive: root.dashboardVisible && (("active" in dashWindow) ? dashWindow.active : true)
 
-    onDashboardVisibleChanged: Services.SystemState.setDashboardState(root.dashboardVisible, root.dashboardActive)
-    onDashboardActiveChanged: Services.SystemState.setDashboardState(root.dashboardVisible, root.dashboardActive)
+    onDashboardVisibleChanged: {
+        if (Services.SystemState.debugLogging)
+            console.log("[QuickDash][Shell] dashboardVisible=" + root.dashboardVisible);
+        Services.SystemState.setDashboardState(root.dashboardVisible, root.dashboardActive)
+    }
+
+    onDashboardActiveChanged: {
+        if (Services.SystemState.debugLogging)
+            console.log("[QuickDash][Shell] dashboardActive=" + root.dashboardActive);
+        Services.SystemState.setDashboardState(root.dashboardVisible, root.dashboardActive)
+    }
 
     NotificationServer {
         id: notifServer
@@ -383,6 +392,9 @@ ShellRoot {
     }
 
     Component.onCompleted: {
+        if (Services.SystemState.debugLogging)
+            console.log("[QuickDash][Shell] component completed dashboardVisible=" + root.dashboardVisible
+                + " dashboardActive=" + root.dashboardActive);
         Services.SystemState.setDashboardState(root.dashboardVisible, root.dashboardActive);
         configLoadProc.command = [
             "sh", "-c",

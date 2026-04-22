@@ -3,3 +3,4 @@ config.jsonc
 .DS_Store
 *.qmlc
 *.jsc
+.codex

@@ -14,17 +14,11 @@ Rectangle {
     property bool collapsible: false
     property bool collapsed: collapsible
 
-    color: ThemeModule.Theme.card
-    radius: ThemeModule.Theme.borderRadius
-    border.width: ThemeModule.Theme.borderWidth
-    border.color: Qt.rgba(
-        ThemeModule.Theme.overlay.r,
-        ThemeModule.Theme.overlay.g,
-        ThemeModule.Theme.overlay.b,
-        0.15
-    )
+    color: "transparent"
+    radius: 0
+    border.width: 0
 
-    implicitHeight: container.implicitHeight + ThemeModule.Theme.spacingMedium * 2
+    implicitHeight: container.implicitHeight
     implicitWidth: parent ? parent.width : 300
 
     Behavior on implicitHeight {
@@ -35,10 +29,7 @@ Rectangle {
 
     Column {
         id: container
-        anchors {
-            fill: parent
-            margins: ThemeModule.Theme.spacingMedium
-        }
+        anchors.fill: parent
         spacing: ThemeModule.Theme.spacingSmall
 
         // Header (optional)
@@ -46,7 +37,7 @@ Rectangle {
             id: headerContainer
             visible: root.title !== ""
             width: parent.width
-            height: visible ? Math.max(28, leftTitleRow.height, rightControlsRow.height) : 0
+            height: visible ? Math.max(20, leftTitleRow.height, rightControlsRow.height) : 0
 
             Row {
                 id: leftTitleRow
@@ -56,17 +47,18 @@ Rectangle {
 
                 Text {
                     text: root.icon
-                    font.pixelSize: ThemeModule.Theme.fontSizeLarge
-                    color: ThemeModule.Theme.accent
+                    font.pixelSize: ThemeModule.Theme.fontSizeSmall
+                    color: ThemeModule.Theme.subtext
                     visible: root.icon !== ""
                 }
 
                 Text {
                     text: root.title
-                    font.pixelSize: ThemeModule.Theme.fontSizeNormal
-                    font.bold: true
+                    font.pixelSize: ThemeModule.Theme.fontSizeSmall
                     font.family: ThemeModule.Theme.fontFamily
-                    color: ThemeModule.Theme.text
+                    font.capitalization: Font.AllUppercase
+                    font.letterSpacing: 0.8
+                    color: ThemeModule.Theme.subtext
                 }
             }
 
@@ -110,6 +102,14 @@ Rectangle {
                     if (root.collapsible) root.collapsed = !root.collapsed
                 }
             }
+        }
+
+        // Thin separator below section label
+        Rectangle {
+            visible: root.title !== ""
+            width: parent.width
+            height: 1
+            color: ThemeModule.Theme.separator
         }
 
         Column {

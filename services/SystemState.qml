@@ -8,6 +8,7 @@ Singleton {
 
     property bool dashboardVisible: true
     property bool dashboardActive: true
+    property bool debugLogging: true
     property bool dndEnabled: false
     // Populated by the config loader — XDG-resolved paths for data files
     // and the user's config file. Widgets read these instead of hardcoding.
@@ -31,12 +32,20 @@ Singleton {
         onTriggered: root.refreshTick++
     }
 
+    function debugLog(message) {
+        if (!root.debugLogging)
+            return;
+        console.log("[QuickDash][SystemState] " + message);
+    }
+
     function setDashboardState(visible, active) {
         root.dashboardVisible = !!visible;
         root.dashboardActive = !!active;
+        root.debugLog("dashboard state visible=" + root.dashboardVisible + " active=" + root.dashboardActive);
     }
 
     function dismissPopup(popupId) {
+        root.debugLog("dismissPopup(" + popupId + ") beforeCount=" + root.activePopups.length);
         var current = root.activePopups.slice();
         for (var i = 0; i < current.length; i++) {
             if (current[i].popupId === popupId) {
@@ -54,6 +63,8 @@ Singleton {
             delete timers[popupId];
             root.popupTimers = timers;
         }
+
+        root.debugLog("dismissPopup(" + popupId + ") afterCount=" + root.activePopups.length);
     }
 
     function clearHistory() {
@@ -79,6 +90,11 @@ Singleton {
         if (!notification)
             return;
 
+        root.debugLog("notification received app='" + (notification.appName || "")
+            + "' summary='" + (notification.summary || "")
+            + "' urgency=" + notification.urgency
+            + " dnd=" + root.dndEnabled);
+
         if (!root.dndEnabled) {
             var popupId = root.popupCounter++;
             var popupObj = {
@@ -96,12 +112,14 @@ Singleton {
             if (currentPopups.length > 5)
                 currentPopups.shift();
             root.activePopups = currentPopups;
+            root.debugLog("activePopups count=" + root.activePopups.length);
 
             var parentObj = timerParent || root;
             var timer = Qt.createQmlObject("import QtQml; Timer {}", parentObj);
             timer.interval = root.timeoutForUrgency(notification.urgency);
             timer.repeat = false;
             timer.triggered.connect(function() {
+                root.debugLog("popup timer fired popupId=" + popupId);
                 root.dismissPopup(popupId);
             });
             timer.start();
@@ -124,5 +142,6 @@ Singleton {
         if (history.length > 50)
             history = history.slice(0, 50);
         root.notificationHistory = history;
+        root.debugLog("notificationHistory count=" + root.notificationHistory.length);
     }
 }

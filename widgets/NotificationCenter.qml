@@ -64,7 +64,7 @@ Components.Card {
                     width: parent.width
                     height: notifContent.height + ThemeModule.Theme.spacingMedium
                     radius: ThemeModule.Theme.borderRadiusSmall
-                    color: notifMouse.containsMouse ? ThemeModule.Theme.cardHover : Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.3)
+                    color: notifMouse.containsMouse ? Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.35) : Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.18)
 
                     Column {
                         id: notifContent

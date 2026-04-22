@@ -82,9 +82,12 @@ Components.Card {
 
             Row {
                 width: parent.width
-                spacing: ThemeModule.Theme.spacingMedium
+                spacing: ThemeModule.Theme.spacingSmall
 
                 Components.ModeSlider {
+                    width: Services.NetworkService.networkMode === 0
+                        ? (parent.width - ThemeModule.Theme.spacingSmall) / 2
+                        : parent.width
                     leftLabel: "Wireless"
                     rightLabel: "Ethernet"
                     selectedIndex: Services.NetworkService.networkMode
@@ -92,25 +95,21 @@ Components.Card {
                     onChanged: function(index) {
                         Services.NetworkService.networkMode = index;
                     }
+
+                    Behavior on width {
+                        NumberAnimation { duration: ThemeModule.Theme.animDuration; easing.type: Easing.OutCubic }
+                    }
                 }
 
-                Flow {
-                    width: parent.width - 132 - ThemeModule.Theme.spacingMedium
-                    spacing: ThemeModule.Theme.spacingSmall
-
-                    Components.InlineActionChip {
-                        visible: Services.NetworkService.networkMode === 0
-                        text: Services.NetworkService.wifiOn ? "Turn Wi-Fi off" : "Turn Wi-Fi on"
-                        tone: Services.NetworkService.wifiOn ? "info" : "neutral"
-                        onActivated: Services.NetworkService.setWifiEnabled(!Services.NetworkService.wifiOn)
-                    }
-
-                    Components.InlineActionChip {
-                        visible: Services.NetworkService.networkMode === 0
-                        text: Services.NetworkService.scanning ? "Scanning" : "Scan"
-                        tone: Services.NetworkService.scanning ? "warning" : "info"
-                        enabled: Services.NetworkService.wifiOn && !Services.NetworkService.scanning
-                        onActivated: Services.NetworkService.startScan()
+                Components.ModeSlider {
+                    visible: Services.NetworkService.networkMode === 0
+                    width: (parent.width - ThemeModule.Theme.spacingSmall) / 2
+                    leftLabel: "Off"
+                    rightLabel: "On"
+                    selectedIndex: Services.NetworkService.wifiOn ? 1 : 0
+                    activeColor: ThemeModule.Theme.sky
+                    onChanged: function(index) {
+                        Services.NetworkService.setWifiEnabled(index === 1);
                     }
                 }
             }
@@ -171,9 +170,8 @@ Components.Card {
             width: parent.width
             height: 36
             radius: ThemeModule.Theme.borderRadiusSmall
-            color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.1)
-            border.width: 1
-            border.color: Qt.rgba(ThemeModule.Theme.sky.r, ThemeModule.Theme.sky.g, ThemeModule.Theme.sky.b, 0.3)
+            color: "transparent"
+            border.width: 0
 
             Row {
                 anchors.centerIn: parent
@@ -216,11 +214,6 @@ Components.Card {
             anchors.horizontalCenter: parent.horizontalCenter
         },
 
-        Item {
-            visible: Services.NetworkService.networkMode === 1
-            width: parent.width
-            height: 0
-        }
     ]
 
     Column {
@@ -424,9 +417,8 @@ Components.Card {
             visible: Services.NetworkService.networkMode === 1
             width: parent.width
             radius: ThemeModule.Theme.borderRadiusSmall
-            color: Qt.rgba(ThemeModule.Theme.surface2.r, ThemeModule.Theme.surface2.g, ThemeModule.Theme.surface2.b, 0.18)
-            border.width: ThemeModule.Theme.borderWidth
-            border.color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.18)
+            color: "transparent"
+            border.width: 0
             implicitHeight: ethernetInfoColumn.implicitHeight + ThemeModule.Theme.spacingSmall * 2
 
             Column {
