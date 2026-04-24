@@ -24,15 +24,15 @@ Singleton {
 
     function setMirrorMode(mirrored) {
         if (root.monitors.length < 2) return;
-        
+
         // Assuming first monitor is primary, second is secondary
         var primaryId = root.primaryMonitor;
         var secondaryId = root.secondaryMonitor;
-        
+
         if (mirrored) {
             mirrorProc.command = ["hyprctl", "keyword", "monitor", secondaryId + ",preferred,auto,1,mirror," + primaryId];
         } else {
-            mirrorProc.command = ["hyprctl", "keyword", "monitor", secondaryId + ",preferred,auto,1"];
+            mirrorProc.command = ["hyprctl", "keyword", "monitor", secondaryId + ",preferred,auto-right,1"];
         }
         mirrorProc.running = true;
         root.applying = true;
@@ -44,17 +44,17 @@ Singleton {
         command: ["hyprctl", "monitors", "all", "-j"]
         running: false
         property string outputData: ""
-        
+
         onRunningChanged: {
             if (running) outputData = "";
         }
-        
+
         stdout: SplitParser {
             onRead: function(line) {
                 monitorsProc.outputData += line + " ";
             }
         }
-        
+
         onExited: {
             try {
                 var json = JSON.parse(monitorsProc.outputData);
@@ -62,11 +62,11 @@ Singleton {
                     // Sort by id to have consistent primary/secondary
                     json.sort(function(a, b) { return a.id - b.id; });
                     root.monitors = json;
-                    
+
                     if (json.length >= 2) {
                         root.primaryMonitor = json[0].name;
                         root.secondaryMonitor = json[1].name;
-                        
+
                         // Check if any monitor is mirroring another
                         var mirrored = false;
                         for (var i = 0; i < json.length; i++) {
