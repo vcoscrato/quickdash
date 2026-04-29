@@ -13,6 +13,7 @@ Components.Card {
     property bool dashboardActive: true
 
     headerActions: Row {
+        visible: Services.BluetoothService.statusMessage === ""
         spacing: ThemeModule.Theme.spacingSmall
 
         Components.ScanButton {
@@ -62,15 +63,25 @@ Components.Card {
     }
 
     pinnedContent: [
+        Text {
+            visible: Services.BluetoothService.statusMessage !== ""
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: Services.BluetoothService.statusMessage
+            font.pixelSize: ThemeModule.Theme.fontSizeSmall
+            font.family: ThemeModule.Theme.fontFamily
+            color: ThemeModule.Theme.warning
+        },
+
         Components.DeviceSection {
-            visible: Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length > 0
+            visible: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length > 0
             width: parent.width
             title: "Connected"
             count: Services.BluetoothService.connectedRows.length
         },
 
         Repeater {
-            model: Services.BluetoothService.btOn ? Services.BluetoothService.connectedRows : []
+            model: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn ? Services.BluetoothService.connectedRows : []
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.name
@@ -88,7 +99,7 @@ Components.Card {
         },
 
         Text {
-            visible: !Services.BluetoothService.btOn
+            visible: Services.BluetoothService.statusMessage === "" && !Services.BluetoothService.btOn
             text: "Bluetooth is off"
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily
@@ -97,7 +108,7 @@ Components.Card {
         },
 
         Text {
-            visible: Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length === 0 && !root.collapsed
+            visible: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length === 0 && !root.collapsed
             text: "No connected devices"
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily
@@ -106,7 +117,7 @@ Components.Card {
         },
 
         Rectangle {
-            visible: Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length === 0 && root.collapsed
+            visible: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length === 0 && root.collapsed
             width: parent.width
             height: 30
             radius: ThemeModule.Theme.borderRadiusSmall
@@ -140,14 +151,14 @@ Components.Card {
         spacing: ThemeModule.Theme.spacingSmall
 
         Components.DeviceSection {
-            visible: Services.BluetoothService.btOn && Services.BluetoothService.knownRows.length > 0
+            visible: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn && Services.BluetoothService.knownRows.length > 0
             width: parent.width
             title: "Known"
             count: Services.BluetoothService.knownRows.length
         }
 
         Repeater {
-            model: Services.BluetoothService.btOn ? Services.BluetoothService.knownRows : []
+            model: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn ? Services.BluetoothService.knownRows : []
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.name
@@ -165,14 +176,14 @@ Components.Card {
         }
 
         Components.DeviceSection {
-            visible: Services.BluetoothService.btOn && Services.BluetoothService.discoveredRows.length > 0
+            visible: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn && Services.BluetoothService.discoveredRows.length > 0
             width: parent.width
             title: "Discovered"
             count: Services.BluetoothService.discoveredRows.length
         }
 
         Repeater {
-            model: Services.BluetoothService.btOn ? Services.BluetoothService.discoveredRows : []
+            model: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn ? Services.BluetoothService.discoveredRows : []
             delegate: Components.DeviceRow {
                 width: parent.width
                 title: modelData.name
@@ -190,7 +201,7 @@ Components.Card {
         }
 
         Text {
-            visible: Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length === 0 && Services.BluetoothService.knownRows.length === 0 && Services.BluetoothService.discoveredRows.length === 0
+            visible: Services.BluetoothService.statusMessage === "" && Services.BluetoothService.btOn && Services.BluetoothService.connectedRows.length === 0 && Services.BluetoothService.knownRows.length === 0 && Services.BluetoothService.discoveredRows.length === 0
             text: "No devices found. Run a scan."
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily

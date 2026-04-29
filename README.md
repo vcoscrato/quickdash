@@ -9,7 +9,7 @@ This is my personal Wayland dashboard, built with [QuickShell](https://quickshel
 
 If you're looking for ideas or a starting point for your own setup, feel free to borrow whatever's useful here. If you feel like discussing ideas, open up an issue.
 
-> **Disclaimer:** Major parts of this repository were written by AI (as you can see by the poor code quality and the emote overflow below).
+> **Note:** Major parts of this repository were built with AI assistance and then iterated on by hand.
 
 ## What it does
 

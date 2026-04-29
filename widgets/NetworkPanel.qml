@@ -32,9 +32,19 @@ Components.Card {
     }
 
     pinnedContent: [
+        Text {
+            visible: Services.NetworkService.statusMessage !== ""
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: Services.NetworkService.statusMessage
+            font.pixelSize: ThemeModule.Theme.fontSizeSmall
+            font.family: ThemeModule.Theme.fontFamily
+            color: ThemeModule.Theme.warning
+        },
+
         // Ethernet Section
         Components.DeviceRow {
-            visible: Services.NetworkService.wiredConnected
+            visible: Services.NetworkService.statusMessage === "" && Services.NetworkService.wiredConnected
             width: parent.width
             title: Services.NetworkService.wiredConnectionName || "Ethernet"
             subtitle: Services.NetworkService.wiredIp || "Connected"
@@ -64,13 +74,14 @@ Components.Card {
                 anchors.right: parent.right
 
                 Components.ScanButton {
-                    visible: Services.NetworkService.wifiOn
+                    visible: Services.NetworkService.statusMessage === "" && Services.NetworkService.wifiOn
                     scanning: Services.NetworkService.scanning
                     text: "Scanning..."
                     onClicked: Services.NetworkService.startScan()
                 }
 
                 Components.TogglePill {
+                    visible: Services.NetworkService.statusMessage === ""
                     height: 32
                     label: Services.NetworkService.wifiOn ? "On" : "Off"
                     checked: Services.NetworkService.wifiOn
@@ -84,7 +95,7 @@ Components.Card {
 
         // ── Connected WiFi row ──────────────────
         Components.DeviceRow {
-            visible: Services.NetworkService.currentConnectedWifi !== null
+            visible: Services.NetworkService.statusMessage === "" && Services.NetworkService.currentConnectedWifi !== null
             width: parent.width
             title: Services.NetworkService.currentConnectedWifi ? Services.NetworkService.currentConnectedWifi.ssid : ""
             subtitle: Services.NetworkService.connectedWifiSubtitle(Services.NetworkService.currentConnectedWifi)
@@ -106,7 +117,7 @@ Components.Card {
 
         // ── Connecting indicator ────────────────
         Item {
-            visible: Services.NetworkService.connecting
+            visible: Services.NetworkService.statusMessage === "" && Services.NetworkService.connecting
                 && Services.NetworkService.currentConnectedWifi === null
             width: parent.width
             height: 36
@@ -143,7 +154,7 @@ Components.Card {
 
     content: [
         Column {
-            visible: Services.NetworkService.wifiOn
+            visible: Services.NetworkService.statusMessage === "" && Services.NetworkService.wifiOn
         width: parent.width
         spacing: ThemeModule.Theme.spacingSmall
 

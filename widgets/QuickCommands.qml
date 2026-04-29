@@ -10,6 +10,18 @@ Components.Card {
     icon: "🚀"
     
     property var cmds: dashboard && dashboard.config && dashboard.config.quickCommands ? dashboard.config.quickCommands : []
+    property bool gtkLaunchAvailable: true
+    property string launchError: ""
+
+    function setLaunchError(message) {
+        root.launchError = message || "";
+        if (root.launchError !== "")
+            launchErrorTimer.restart();
+    }
+
+    function clearLaunchError() {
+        root.setLaunchError("");
+    }
 
     function commandForItem(item) {
         if (!item) {
@@ -28,8 +40,21 @@ Components.Card {
     }
 
     function launch(item) {
+        root.clearLaunchError();
+
+        if (!item) {
+            root.setLaunchError("Invalid launcher item");
+            return;
+        }
+
+        if (item.mode === "desktop" && !root.gtkLaunchAvailable) {
+            root.setLaunchError("gtk-launch is not available");
+            return;
+        }
+
         var command = root.commandForItem(item);
         if (command.length === 0) {
+            root.setLaunchError("Launcher item is missing a command");
             return;
         }
 
@@ -37,16 +62,40 @@ Components.Card {
         execProc.environment = item.environment || ({});
         execProc.clearEnvironment = !!item.clearEnvironment;
         execProc.workingDirectory = item.workingDirectory || "";
-        execProc.startDetached();
+        if (execProc.startDetached() === false) {
+            root.setLaunchError("Could not launch " + (item.label || "item"));
+            return;
+        }
+
+        root.clearLaunchError();
 
         if (item.closeOnLaunch !== false) {
             dashboard.activePanel = "";
         }
     }
+
+    Component.onCompleted: gtkLaunchProbeProc.running = true
     
     Process {
         id: execProc
         running: false
+    }
+
+    Process {
+        id: gtkLaunchProbeProc
+        command: ["sh", "-lc", "command -v gtk-launch >/dev/null 2>&1"]
+        running: false
+        onExited: function(exitCode) {
+            root.gtkLaunchAvailable = exitCode === 0;
+        }
+    }
+
+    Timer {
+        id: launchErrorTimer
+        interval: 5000
+        running: false
+        repeat: false
+        onTriggered: root.clearLaunchError()
     }
 
     Flow {
@@ -95,6 +144,16 @@ Components.Card {
             font.pixelSize: ThemeModule.Theme.fontSizeSmall
             font.family: ThemeModule.Theme.fontFamily
             color: ThemeModule.Theme.subtext
+        }
+
+        Text {
+            width: parent.width
+            visible: root.launchError !== ""
+            wrapMode: Text.WordWrap
+            text: root.launchError
+            font.pixelSize: ThemeModule.Theme.fontSizeSmall
+            font.family: ThemeModule.Theme.fontFamily
+            color: ThemeModule.Theme.warning
         }
     }
 }

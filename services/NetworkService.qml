@@ -40,6 +40,16 @@ Singleton {
     property string connectingSsid: ""
 
     property string forgetArmedSsid: ""
+    property bool toolAvailable: true
+    property string statusMessage: ""
+
+    function setStatusMessage(message) {
+        root.statusMessage = message || "";
+    }
+
+    function clearStatusMessage() {
+        root.setStatusMessage("");
+    }
 
     // ── Process helpers ────────────────────────────────────
     function startProcess(proc) {
@@ -88,6 +98,10 @@ Singleton {
     function startScan() {
         if (!root.wifiOn || root.scanning)
             return;
+        if (!root.toolAvailable) {
+            root.setStatusMessage("nmcli is not available");
+            return;
+        }
 
         monitorRefreshTimer.stop();
         root.setMonitorRunning(false);
@@ -106,12 +120,16 @@ Singleton {
 
     // ── Refresh ────────────────────────────────────────────
     function refreshSummary() {
+        if (!root.toolAvailable)
+            return;
         root.startProcess(activeConnectionsProc);
         root.startProcess(wifiStatusProc);
         root.startProcess(activeSsidProc);
     }
 
     function refreshDetails() {
+        if (!root.toolAvailable)
+            return;
         root.startProcess(savedProfilesProc);
     }
 
@@ -265,6 +283,10 @@ Singleton {
     // ── Actions ────────────────────────────────────────────
     function setWifiEnabled(enabled) {
         if (wifiOn === enabled) return;
+        if (!root.toolAvailable) {
+            root.setStatusMessage("nmcli is not available");
+            return;
+        }
         wifiOn = enabled;
         wifiToggleProc.command = ["nmcli", "radio", "wifi", enabled ? "on" : "off"];
         wifiToggleProc.running = true;
@@ -276,6 +298,10 @@ Singleton {
     }
 
     function requestConnect(row, password) {
+        if (!root.toolAvailable) {
+            root.setStatusMessage("nmcli is not available");
+            return;
+        }
         connectError = "";
         connectErrorSsid = "";
         connecting = true;
@@ -297,6 +323,10 @@ Singleton {
 
     function requestDisconnectWifi(row) {
         if (!row) return;
+        if (!root.toolAvailable) {
+            root.setStatusMessage("nmcli is not available");
+            return;
+        }
         wifiDisconnectProc.targetSsid = row.ssid;
         wifiDisconnectProc.command = row.connectionUuid !== ""
             ? ["nmcli", "connection", "down", "uuid", row.connectionUuid]
@@ -337,6 +367,10 @@ Singleton {
 
     function onToggleAutoconnect(row) {
         if (!row || row.connectionUuid === "" || row.autoconnect === null) return;
+        if (!root.toolAvailable) {
+            root.setStatusMessage("nmcli is not available");
+            return;
+        }
         autoconnectProc.command = [
             "nmcli", "connection", "modify", "uuid", row.connectionUuid,
             "connection.autoconnect", row.autoconnect ? "no" : "yes"
@@ -353,14 +387,14 @@ Singleton {
 
     // ── Lifecycle ──────────────────────────────────────────
     Component.onCompleted: {
-        root.setMonitorRunning(true);
-        if (SystemState.dashboardVisible)
-            root.refreshAll(true);
+        nmcliProbeProc.running = true;
     }
 
     Connections {
         target: SystemState
         function onDashboardVisibleChanged() {
+            if (!root.toolAvailable)
+                return;
             if (SystemState.dashboardVisible) {
                 root.setMonitorRunning(true);
                 root.scheduleMonitorRefresh(true);
@@ -414,10 +448,37 @@ Singleton {
 
     // ── Processes ───────────────────────────────────────────
     Process {
+        id: nmcliProbeProc
+        command: ["sh", "-lc", "command -v nmcli >/dev/null 2>&1"]
+        running: false
+        onExited: function(exitCode) {
+            root.toolAvailable = exitCode === 0;
+            if (!root.toolAvailable) {
+                root.setStatusMessage("nmcli is not available");
+                root.scanning = false;
+                root.connecting = false;
+                root.connectingSsid = "";
+                return;
+            }
+
+            root.clearStatusMessage();
+            root.setMonitorRunning(true);
+            if (SystemState.dashboardVisible)
+                root.refreshAll(true);
+        }
+    }
+
+    Process {
         id: networkMonitorProc
         command: ["nmcli", "monitor"]
         running: false
-        onExited: {
+        onExited: function(exitCode) {
+            if (!root.toolAvailable)
+                return;
+            if (SystemState.dashboardVisible && !root.scanning && exitCode !== 0) {
+                root.setStatusMessage("Network status unavailable");
+                return;
+            }
             if (SystemState.dashboardVisible && !root.scanning)
                 networkMonitorRestartTimer.restart();
         }
@@ -447,7 +508,12 @@ Singleton {
                 ethernetIp = "";
             }
         }
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.setStatusMessage("Network status unavailable");
+                return;
+            }
+            root.clearStatusMessage();
             activeWifiByName = wifiMap;
             realWiredConnected = foundEthernet;
             realWiredConnectionName = ethernetName;
@@ -479,6 +545,10 @@ Singleton {
         id: wifiStatusProc
         command: ["nmcli", "radio", "wifi"]
         running: false
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Network status unavailable");
+        }
         stdout: SplitParser {
             onRead: function(line) {
                 var v = (line || "").trim().toLowerCase();
@@ -498,7 +568,11 @@ Singleton {
         running: false
         property bool foundActive: false
         onRunningChanged: if (running) foundActive = false
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.setStatusMessage("Network status unavailable");
+                return;
+            }
             if (!foundActive) currentSSID = "";
             root.scheduleRebuild();
         }
@@ -522,7 +596,11 @@ Singleton {
         onRunningChanged: {
             if (running) results = [];
         }
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.setStatusMessage("Saved network list unavailable");
+                return;
+            }
             savedWifiProfiles = savedProfilesProc.results;
             savedProfilesProc.results = [];
             root.scheduleRebuild();
@@ -551,7 +629,14 @@ Singleton {
         onRunningChanged: {
             if (running) results = [];
         }
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.setStatusMessage("Network scan failed");
+                scanProc.results = [];
+                root.finishScan();
+                return;
+            }
+            root.clearStatusMessage();
             rawNetworks = scanProc.results;
             scanProc.results = [];
             root.finishScan();
@@ -574,7 +659,13 @@ Singleton {
         id: wifiToggleProc
         command: ["nmcli", "radio", "wifi", "on"]
         running: false
-        onExited: root.refreshAll(true)
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Wi-Fi toggle failed");
+            else
+                root.clearStatusMessage();
+            root.refreshAll(true)
+        }
     }
 
     Process {
@@ -590,6 +681,7 @@ Singleton {
             connectingSsid = "";
 
             if (exitCode === 0) {
+                root.clearStatusMessage();
                 connectError = "";
                 connectErrorSsid = "";
                 passwordRowSsid = "";
@@ -615,7 +707,11 @@ Singleton {
         command: ["nmcli", "connection", "down", "id", ""]
         running: false
         property string targetSsid: ""
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Disconnect failed");
+            else
+                root.clearStatusMessage();
             if (currentSSID === targetSsid) currentSSID = "";
             root.refreshAll(true);
         }
@@ -625,7 +721,13 @@ Singleton {
         id: autoconnectProc
         command: ["nmcli", "connection", "modify", "uuid", "", "connection.autoconnect", "yes"]
         running: false
-        onExited: root.refreshAll(true)
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Autoconnect update failed");
+            else
+                root.clearStatusMessage();
+            root.refreshAll(true)
+        }
     }
 
     Process {
@@ -633,7 +735,11 @@ Singleton {
         command: ["nmcli", "connection", "delete", "id", ""]
         running: false
         property string targetSsid: ""
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Forget network failed");
+            else
+                root.clearStatusMessage();
             if (passwordRowSsid === targetSsid) {
                 passwordRowSsid = "";
                 passwordText = "";

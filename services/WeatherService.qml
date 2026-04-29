@@ -11,6 +11,27 @@ Singleton {
     property string location: ""
     property bool fetchQueued: false
 
+    function normalizeWeatherText(text, exitCode, errorText) {
+        var trimmed = (text || "").trim();
+        var error = (errorText || "").trim().toLowerCase();
+
+        if (exitCode === 0 && trimmed.length > 0
+                && !trimmed.includes("Sorry")
+                && !trimmed.includes("Unknown")) {
+            return trimmed;
+        }
+
+        if (error.indexOf("command not found") !== -1 || error.indexOf("not found") !== -1) {
+            return "Weather unavailable";
+        }
+
+        if (exitCode !== 0 || trimmed === "") {
+            return "Weather offline";
+        }
+
+        return "Weather unavailable";
+    }
+
     Timer {
         id: weatherTimer
         interval: 1800000 // 30 mins
@@ -26,9 +47,9 @@ Singleton {
 
     function fetchWeather() {
         if (!weatherProc.running) {
-            var loc = root.location.trim();
+            var loc = String(root.location || "").trim();
             var url = loc !== "" ? ("wttr.in/" + loc + "?format=%c+%t") : "wttr.in/?format=%c+%t";
-            weatherProc.command = ["curl", "-s", url];
+            weatherProc.command = ["curl", "-fsS", "--max-time", "8", url];
             weatherProc.running = true;
         } else {
             root.fetchQueued = true;
@@ -37,10 +58,18 @@ Singleton {
 
     Process {
         id: weatherProc
-        command: ["curl", "-s", "wttr.in/?format=%c+%t"]
+        command: ["curl", "-fsS", "--max-time", "8", "wttr.in/?format=%c+%t"]
         running: false
 
         property string output: ""
+        property string errorOutput: ""
+
+        onRunningChanged: {
+            if (running) {
+                weatherProc.output = "";
+                weatherProc.errorOutput = "";
+            }
+        }
 
         stdout: SplitParser {
             onRead: function(data) {
@@ -48,15 +77,18 @@ Singleton {
             }
         }
 
-        onExited: {
-            var text = weatherProc.output.trim();
-            weatherProc.output = "";
-
-            if (text.length > 0 && !text.includes("Sorry") && !text.includes("Unknown")) {
-                root.currentWeatherStr = text;
-            } else if (text === "") {
-                root.currentWeatherStr = "Offline";
+        stderr: SplitParser {
+            onRead: function(data) {
+                weatherProc.errorOutput += data;
             }
+        }
+
+        onExited: function(exitCode) {
+            var text = weatherProc.output.trim();
+            var errorText = weatherProc.errorOutput.trim();
+            weatherProc.output = "";
+            weatherProc.errorOutput = "";
+            root.currentWeatherStr = root.normalizeWeatherText(text, exitCode, errorText);
 
             if (root.fetchQueued) {
                 root.fetchQueued = false;

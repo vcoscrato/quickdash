@@ -88,8 +88,16 @@ Singleton {
                         root.lastIdle = totalIdle;
                     }
                 } else if (section === 1) { // /proc/meminfo
-                    if (line.startsWith("MemTotal:")) memTotal = parseInt(line.match(/\d+/)[0]);
-                    if (line.startsWith("MemAvailable:")) memAvail = parseInt(line.match(/\d+/)[0]);
+                    if (line.startsWith("MemTotal:")) {
+                        var totalMatch = line.match(/\d+/);
+                        if (totalMatch)
+                            memTotal = parseInt(totalMatch[0]);
+                    }
+                    if (line.startsWith("MemAvailable:")) {
+                        var availMatch = line.match(/\d+/);
+                        if (availMatch)
+                            memAvail = parseInt(availMatch[0]);
+                    }
                 } else if (section === 2) { // temp
                     if (line.length > 0) {
                         var tempMillis = parseInt(line);

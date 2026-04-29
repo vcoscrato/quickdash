@@ -231,7 +231,6 @@ Components.Card {
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.overlay
                             visible: Services.WeatherService.currentWeatherStr !== "Loading..."
-                                && Services.WeatherService.currentWeatherStr !== "Offline"
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
@@ -244,7 +243,6 @@ Components.Card {
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.subtext
                             visible: Services.WeatherService.currentWeatherStr !== "Loading..."
-                                && Services.WeatherService.currentWeatherStr !== "Offline"
                             anchors.verticalCenter: parent.verticalCenter
 
                             MouseArea {

@@ -11,6 +11,13 @@ import "core" as Core
 ShellRoot {
     id: root
 
+    function applyConfig(configValue) {
+        var normalized = root.normalizeConfig(configValue || {});
+        root.config = normalized;
+        ThemeModule.Theme.paletteName = normalized.colorScheme || "everforest";
+        Services.WeatherService.location = normalized.weatherLocation || "";
+    }
+
     function defaultSidebarIcon(widgetName) {
         var map = {
             "clock": "🕐",
@@ -366,7 +373,7 @@ ShellRoot {
             var nl2 = text.indexOf("\n", nl1 + 1);
             if (nl1 === -1 || nl2 === -1) {
                 console.warn("[QuickDash] Unexpected config loader output, using defaults");
-                root.config = {};
+                root.applyConfig({});
                 return;
             }
             var configDir = text.substring(0, nl1);
@@ -376,17 +383,15 @@ ShellRoot {
             Services.SystemState.configPath = configDir + "/config.jsonc";
             if (jsonc.replace(/\s/g, "") === "") {
                 console.warn("[QuickDash] Config file empty, using defaults");
-                root.config = {};
+                root.applyConfig({});
                 return;
             }
             try {
                 var parsed = JSON.parse(root.stripTrailingJsonCommas(root.stripJsonComments(jsonc)).trim());
-                root.config = root.normalizeConfig(parsed);
-                ThemeModule.Theme.paletteName    = root.config.colorScheme     || "everforest";
-                Services.WeatherService.location = root.config.weatherLocation || "";
+                root.applyConfig(parsed);
             } catch (e) {
                 console.warn("[QuickDash] Config parse failed:", e);
-                root.config = {};
+                root.applyConfig({});
             }
         }
     }

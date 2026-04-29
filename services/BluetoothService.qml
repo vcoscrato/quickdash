@@ -19,10 +19,20 @@ Singleton {
     property string disconnectingMac: ""
     property int scanElapsed: 0
     readonly property int scanTimeout: 12
+    property bool toolAvailable: true
+    property string statusMessage: ""
 
     property var connectedRows: []
     property var knownRows: []
     property var discoveredRows: []
+
+    function setStatusMessage(message) {
+        root.statusMessage = message || "";
+    }
+
+    function clearStatusMessage() {
+        root.setStatusMessage("");
+    }
 
     // ── Helpers ────────────────────────────────────────────
     function startProcess(proc) {
@@ -121,6 +131,10 @@ Singleton {
 
     // ── Actions ────────────────────────────────────────────
     function onRowPrimary(row) {
+        if (!root.toolAvailable) {
+            root.setStatusMessage("bluetoothctl is not available");
+            return;
+        }
         if (!btOn) return;
 
         if (row.connected) {
@@ -136,6 +150,10 @@ Singleton {
 
     function startScan() {
         if (!btOn || scanning) return;
+        if (!root.toolAvailable) {
+            root.setStatusMessage("bluetoothctl is not available");
+            return;
+        }
         discoveredDevices = [];
         scanning = true;
         scanElapsed = 0;
@@ -144,6 +162,10 @@ Singleton {
     }
 
     function togglePower(state) {
+        if (!root.toolAvailable) {
+            root.setStatusMessage("bluetoothctl is not available");
+            return;
+        }
         btOn = state;
         if (!state && scanning) {
             scanProc.running = false;
@@ -158,7 +180,7 @@ Singleton {
     }
 
     // ── Lifecycle ──────────────────────────────────────────
-    Component.onCompleted: root.refreshAll(true)
+    Component.onCompleted: bluetoothctlProbeProc.running = true
 
     // ── Timer ──────────────────────────────────────────────
     Timer {
@@ -183,9 +205,29 @@ Singleton {
 
     // ── Processes ──────────────────────────────────────────
     Process {
+        id: bluetoothctlProbeProc
+        command: ["sh", "-lc", "command -v bluetoothctl >/dev/null 2>&1"]
+        running: false
+        onExited: function(exitCode) {
+            root.toolAvailable = exitCode === 0;
+            if (!root.toolAvailable) {
+                root.setStatusMessage("bluetoothctl is not available");
+                return;
+            }
+
+            root.clearStatusMessage();
+            root.refreshAll(true);
+        }
+    }
+
+    Process {
         id: powerStatusProc
         command: ["bluetoothctl", "show"]
         running: false
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Bluetooth status unavailable");
+        }
         stdout: SplitParser {
             onRead: function(line) {
                 var lower = (line || "").toLowerCase();
@@ -199,7 +241,13 @@ Singleton {
         id: powerToggleProc
         command: ["bluetoothctl", "power", "on"]
         running: false
-        onExited: root.refreshAll(true)
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.setStatusMessage("Bluetooth toggle failed");
+            else
+                root.clearStatusMessage();
+            root.refreshAll(true)
+        }
     }
 
     Process {
@@ -210,7 +258,12 @@ Singleton {
         onRunningChanged: {
             if (running) results = [];
         }
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.setStatusMessage("Bluetooth devices unavailable");
+                return;
+            }
+            root.clearStatusMessage();
             pairedDevices = pairedProc.results;
             pairedProc.results = [];
             root.scheduleRebuild();
@@ -236,7 +289,11 @@ Singleton {
         onRunningChanged: {
             if (running) macMap = ({})
         }
-        onExited: {
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.setStatusMessage("Bluetooth devices unavailable");
+                return;
+            }
             connectedMacs = macMap;
             root.scheduleRebuild();
         }
@@ -257,9 +314,16 @@ Singleton {
         onRunningChanged: {
             if (running) results = [];
         }
-        onExited: {
+        onExited: function(exitCode) {
             scanning = false;
             scanElapsedTimer.stop();
+            if (exitCode !== 0) {
+                root.setStatusMessage("Bluetooth scan failed");
+                scanProc.results = [];
+                root.scheduleRebuild();
+                return;
+            }
+            root.clearStatusMessage();
             discoveredDevices = scanProc.results;
             scanProc.results = [];
             root.startProcess(pairedProc);
@@ -287,8 +351,12 @@ Singleton {
         id: connectProc
         command: ["bluetoothctl", "connect", ""]
         running: false
-        onExited: {
+        onExited: function(exitCode) {
             root.connectingMac = "";
+            if (exitCode !== 0)
+                root.setStatusMessage("Bluetooth connection failed");
+            else
+                root.clearStatusMessage();
             root.refreshAll(true);
         }
     }
@@ -297,8 +365,12 @@ Singleton {
         id: disconnectProc
         command: ["bluetoothctl", "disconnect", ""]
         running: false
-        onExited: {
+        onExited: function(exitCode) {
             root.disconnectingMac = "";
+            if (exitCode !== 0)
+                root.setStatusMessage("Bluetooth disconnect failed");
+            else
+                root.clearStatusMessage();
             root.refreshAll(true);
         }
     }

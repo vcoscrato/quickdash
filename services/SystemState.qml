@@ -8,7 +8,7 @@ Singleton {
 
     property bool dashboardVisible: true
     property bool dashboardActive: true
-    property bool debugLogging: true
+    property bool debugLogging: false
     property bool dndEnabled: false
     // Populated by the config loader — XDG-resolved paths for data files
     // and the user's config file. Widgets read these instead of hardcoding.

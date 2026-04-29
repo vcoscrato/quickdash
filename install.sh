@@ -28,6 +28,24 @@ info()    { echo "  $*"; }
 success() { echo "✓ $*"; }
 warn()    { echo "! $*"; }
 
+require_cmd() {
+    local cmd="$1"
+    local hint="$2"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "ERROR: required command not found: $cmd"
+        echo "       $hint"
+        exit 1
+    fi
+}
+
+warn_missing_cmd() {
+    local cmd="$1"
+    local feature="$2"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        warn "$cmd not found; $feature"
+    fi
+}
+
 # ── Uninstall ─────────────────────────────────────────────────────────────────
 
 if [[ "${1:-}" == "--uninstall" ]]; then
@@ -44,6 +62,13 @@ fi
 
 echo "Installing QuickDash..."
 echo ""
+
+require_cmd quickshell "Install QuickShell first, then rerun this installer."
+
+warn_missing_cmd nmcli "network controls will be unavailable until NetworkManager is installed."
+warn_missing_cmd bluetoothctl "Bluetooth controls will be unavailable until BlueZ tools are installed."
+warn_missing_cmd pactl "audio device controls may be limited until PulseAudio/PipeWire Pulse tools are installed."
+warn_missing_cmd curl "weather refresh will be unavailable until curl is installed."
 
 if [[ -L "$DATA_DIR" ]]; then
     warn "Removing legacy app symlink: $DATA_DIR"
@@ -94,6 +119,11 @@ echo "  Start:  quickdash"
 echo "  Config: $CONFIG_DIR/config.jsonc"
 echo "  Data:   $DATA_DIR"
 echo ""
+
+warn_missing_cmd brightnessctl "brightness controls will stay hidden until brightnessctl is installed."
+warn_missing_cmd hyprsunset "night light controls will stay hidden until hyprsunset is installed."
+warn_missing_cmd cliphist "clipboard history in Capture Pad will be unavailable until cliphist is installed."
+warn_missing_cmd gtk-launch "desktop launcher entries will be unavailable until gtk-launch is installed."
 
 # Warn if the bin dir is not in PATH
 if [[ ":${PATH}:" != *":${BIN_DIR}:"* ]]; then
