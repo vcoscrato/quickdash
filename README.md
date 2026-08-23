@@ -22,6 +22,7 @@ Speshell is especially useful for heavy fullscreen applications. If you need qui
 - Integrated app, calculator, panel, bang, and web launcher
 - Network and Bluetooth controls
 - Notification daemon with history and DND
+- Activity controls for screen recording, dictation, and other long-running tools
 - Calendar, battery status, power actions, and system tray
 
 Unsupported widgets hide automatically. For example, a desktop without a battery does not show the battery widget.
@@ -40,6 +41,8 @@ Optional integrations:
 - **hyprlock** for the default screen-lock and lock-before-sleep actions
 - **hyprsunset** for Night Light
 - **cliphist** for clipboard history
+- **wf-recorder** for screen recording activity detection and control
+- **whisper.cpp** for dictation transcription activity detection
 - **wl-clipboard** for clipboard capture and every copy action, including calculator results and error reports
 - **xdg-utils** to open the config when `$VISUAL` and `$EDITOR` are unset
 
@@ -123,8 +126,23 @@ Speshell validates malformed lines and the settings that can put the runtime int
 
 Output-volume changes made outside the dashboard, including the standard `wpctl` media-key bindings, show a compact on-screen volume indicator. Changes made with Speshell's own slider or sidebar wheel stay quiet.
 
+### Activities
+
+Long-running foreground utilities appear in a compact activity control at the top of the focused display. Speshell detects `wf-recorder` automatically and provides a **Stop** action. It also follows the existing `dictate-toggle` workflow through its `pw-record` and `whisper-cli` processes, showing distinct listening and transcribing states with a **Finish** action while listening. Existing Hyprland bindings that launch `record-toggle` or `dictate-toggle` do not need to change.
+
+Other tools can publish the same generic activity model over IPC:
+
+```bash
+speshell activity set sync active "Syncing files" "Uploading changes" refresh info
+speshell activity list
+speshell activity clear sync
+```
+
+Valid active states are `active`, `busy`, `paused`, and `error`; `idle`, `inactive`, `stopped`, or `complete` clear the published activity. Icons use Speshell's semantic icon names and tones may be `neutral`, `success`, `warning`, `error`, or `info`. Process adapters remain separate from the shared model, so future utilities can integrate without adding service-specific properties to the activity UI.
+
 | INI property | Valid values |
 |---|---|
+| `[Appearance] textScale` | `0.8`–`1.5` |
 | `[Appearance] panelWidth` | `240`–`1200` |
 | `[Appearance] panelMargin` | `0`–`128` |
 | `[Audio] scrollStep` | `1`–`100` |

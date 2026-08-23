@@ -14,6 +14,7 @@ ShellRoot {
         if (!configValue)
             return;
         ThemeModule.Theme.paletteName = configValue.colorScheme;
+        ThemeModule.Theme.textScale = configValue.textScale;
         Services.WeatherService.location = configValue.weatherLocation;
         Services.WeatherService.enabled = configValue.weatherEnabled;
         Services.FeatureSupport.configuredBacklightDevice = configValue.backlightDevice;

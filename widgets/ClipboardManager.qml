@@ -36,7 +36,7 @@ Components.Card {
                 : (Services.ClipboardService.history.length > 0
                     ? Services.ClipboardService.history.length + " items"
                     : "")
-            font.pixelSize: 10
+            font.pixelSize: ThemeModule.Theme.fontSizeCaption
             font.family: ThemeModule.Theme.fontFamily
             color: ThemeModule.Theme.subtext
             visible: text !== ""
@@ -54,7 +54,7 @@ Components.Card {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 text: Services.ClipboardService.feedbackText
-                font.pixelSize: 10
+                font.pixelSize: ThemeModule.Theme.fontSizeCaption
                 font.family: ThemeModule.Theme.fontFamily
                 color: {
                     if (Services.ClipboardService.feedbackTone === "success") return ThemeModule.Theme.success;

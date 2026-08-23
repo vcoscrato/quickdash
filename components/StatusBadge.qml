@@ -11,8 +11,9 @@ Rectangle {
         return ThemeModule.Theme.toneColor(root.tone);
     }
 
-    radius: 9
-    height: 18
+    radius: height / 2
+    implicitHeight: Math.max(18, badgeText.implicitHeight + ThemeModule.Theme.spacingTiny)
+    height: implicitHeight
     width: badgeText.width + 14
     color: Qt.rgba(toneColor().r, toneColor().g, toneColor().b, 0.18)
     border.width: ThemeModule.Theme.borderWidth
@@ -22,7 +23,7 @@ Rectangle {
         id: badgeText
         anchors.centerIn: parent
         text: root.text
-        font.pixelSize: 10
+        font.pixelSize: ThemeModule.Theme.fontSizeCaption
         font.family: ThemeModule.Theme.fontFamily
         font.bold: true
         color: root.toneColor()

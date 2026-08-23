@@ -52,11 +52,22 @@ QtObject {
 
     // ── Typography ──────────────────────────────────────────
     readonly property string fontFamily: "Inter, Segoe UI, Roboto, sans-serif"
-    readonly property int fontSizeSmall:  11
-    readonly property int fontSizeNormal: 13
-    readonly property int fontSizeLarge:  16
-    readonly property int fontSizeXL:     24
-    readonly property int fontSizeHuge:   40
+    property real textScale: 1.0
+    readonly property int fontSizeMicro:      Math.round(9 * root.textScale)
+    readonly property int fontSizeCaption:    Math.round(10 * root.textScale)
+    readonly property int fontSizeSmall:      Math.round(11 * root.textScale)
+    readonly property int fontSizeSupporting: Math.round(12 * root.textScale)
+    readonly property int fontSizeNormal:     Math.round(13 * root.textScale)
+    readonly property int fontSizeEmphasis:   Math.round(14 * root.textScale)
+    readonly property int fontSizeLarge:      Math.round(16 * root.textScale)
+    readonly property int fontSizeTitle:      Math.round(20 * root.textScale)
+    readonly property int fontSizeXL:         Math.round(24 * root.textScale)
+    readonly property int fontSizeHuge:       Math.round(40 * root.textScale)
+
+    // Icons are geometry, not typography. Keep them stable when only text scales.
+    readonly property int iconSizeSmall:  13
+    readonly property int iconSizeMedium: 16
+    readonly property int iconSizeLarge:  24
 
     // ── Spacing ─────────────────────────────────────────────
     readonly property int spacingTiny:   4

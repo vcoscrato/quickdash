@@ -57,7 +57,7 @@ Components.Card {
             Components.IconButton {
                 iconName: "chevron-left"
                 size: 28
-                iconSize: ThemeModule.Theme.fontSizeNormal
+                iconSize: ThemeModule.Theme.iconSizeSmall
                 tooltipText: "Previous month"
                 onClicked: {
                     if (root.displayMonth === 0) {
@@ -87,7 +87,7 @@ Components.Card {
             Components.IconButton {
                 iconName: "chevron-right"
                 size: 28
-                iconSize: ThemeModule.Theme.fontSizeNormal
+                iconSize: ThemeModule.Theme.iconSizeSmall
                 tooltipText: "Next month"
                 onClicked: {
                     if (root.displayMonth === 11) {
@@ -112,7 +112,7 @@ Components.Card {
 
                     width: parent.width / 7
                     text: modelData
-                    font.pixelSize: 10
+                    font.pixelSize: ThemeModule.Theme.fontSizeCaption
                     font.family: ThemeModule.Theme.fontFamily
                     font.bold: true
                     color: ThemeModule.Theme.overlay

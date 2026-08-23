@@ -142,6 +142,10 @@ Singleton {
         return setProperty("Appearance", "colorScheme", colorScheme);
     }
 
+    function setTextScale(scale) {
+        return setProperty("Appearance", "textScale", scale);
+    }
+
     function setPanelWidth(width) {
         return setProperty("Appearance", "panelWidth", width);
     }

@@ -15,8 +15,9 @@ Rectangle {
         return ThemeModule.Theme.toneColor(root.tone);
     }
 
-    radius: 11
-    height: 22
+    radius: height / 2
+    implicitHeight: Math.max(22, chipContent.implicitHeight + ThemeModule.Theme.spacingSmall)
+    height: implicitHeight
     width: chipContent.width + 16
     opacity: enabled ? 1.0 : 0.45
     color: chipMouse.containsMouse
@@ -47,7 +48,7 @@ Rectangle {
 
         Text {
             text: root.text
-            font.pixelSize: 10
+            font.pixelSize: ThemeModule.Theme.fontSizeCaption
             font.family: ThemeModule.Theme.fontFamily
             font.bold: true
             color: root.toneColor()

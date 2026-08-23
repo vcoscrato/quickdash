@@ -25,7 +25,7 @@ Components.Card {
         return "Settings";
     }
     readonly property var categories: [
-        { id: "appearance", label: "Appearance", detail: "Theme & panel geometry" },
+        { id: "appearance", label: "Appearance", detail: "Theme, text & geometry" },
         { id: "audio", label: "Audio", detail: "Panel & volume behavior" },
         { id: "launcher", label: "Launcher", detail: "Size & search" },
         { id: "integrations", label: "Integrations", detail: "Weather & hardware" },
@@ -50,6 +50,14 @@ Components.Card {
         { value: 420, label: "Default · 420 px" },
         { value: 520, label: "Wide · 520 px" },
         { value: 640, label: "Extra Wide · 640 px" }
+    ]
+    readonly property var textScaleOptions: [
+        { value: 0.85, label: "Compact · 85%" },
+        { value: 1.0, label: "Default · 100%" },
+        { value: 1.1, label: "Comfortable · 110%" },
+        { value: 1.2, label: "Large · 120%" },
+        { value: 1.35, label: "Extra Large · 135%" },
+        { value: 1.5, label: "Maximum · 150%" }
     ]
     readonly property var panelMarginOptions: [
         { value: 0, label: "None" },
@@ -185,6 +193,15 @@ Components.Card {
                 options: root.themeOptions
                 currentValue: ThemeModule.Theme.paletteName
                 onValueSelected: function(value) { Services.ConfigService.setColorScheme(value); }
+            }
+
+            Components.SelectMenuRow {
+                enabled: !Services.ConfigService.savingConfig
+                label: "Text Size"
+                options: root.textScaleOptions
+                currentValue: root.settingsConfig.textScale !== undefined ? root.settingsConfig.textScale : 1.0
+                fallbackLabel: Math.round(Number(currentValue) * 100) + "% · Custom"
+                onValueSelected: function(value) { Services.ConfigService.setTextScale(value); }
             }
 
             Components.SelectMenuRow {

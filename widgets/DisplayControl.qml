@@ -443,7 +443,7 @@ Components.Card {
                             text: displayTile.modelData.name || "Display"
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                             font.bold: true
                             color: ThemeModule.Theme.text
@@ -505,7 +505,7 @@ Components.Card {
                             id: pillText
                             width: Math.min(138, implicitWidth)
                             text: displayPill.modelData.name || "Display"
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                             font.bold: true
                             color: displayPill.modelData.disabled ? ThemeModule.Theme.subtext : ThemeModule.Theme.text
@@ -516,7 +516,7 @@ Components.Card {
                         Text {
                             id: pillState
                             text: displayPill.modelData.disabled ? "Off" : "On"
-                            font.pixelSize: 9
+                            font.pixelSize: ThemeModule.Theme.fontSizeMicro
                             font.family: ThemeModule.Theme.fontFamily
                             color: displayPill.pillColor
                             anchors.verticalCenter: parent.verticalCenter
@@ -580,7 +580,7 @@ Components.Card {
                             width: parent.width
                             visible: root.selectedMonitor !== null && root.selectedMonitor.description !== ""
                             text: root.selectedMonitor ? root.selectedMonitor.description : ""
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.subtext
                             elide: Text.ElideRight

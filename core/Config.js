@@ -117,6 +117,22 @@ function integerValue(document, sectionName, keyName, fallback, minimum, maximum
     return value;
 }
 
+function realValue(document, sectionName, keyName, fallback, minimum, maximum, errors) {
+    var valueEntry = entry(document, sectionName, keyName);
+    if (!valueEntry)
+        return fallback;
+    if (!/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(valueEntry.value)) {
+        addError(errors, pathFor(sectionName, keyName), valueEntry.line, "Expected a number.");
+        return fallback;
+    }
+    var value = Number(valueEntry.value);
+    if (!isFinite(value) || value < minimum || value > maximum) {
+        addError(errors, pathFor(sectionName, keyName), valueEntry.line, "Expected a value from " + minimum + " to " + maximum + ".");
+        return fallback;
+    }
+    return value;
+}
+
 function booleanValue(document, sectionName, keyName, fallback, errors) {
     var valueEntry = entry(document, sectionName, keyName);
     if (!valueEntry)
@@ -229,6 +245,7 @@ function parseAndValidate(iniText) {
 
     var config = {
         colorScheme: colorScheme,
+        textScale: realValue(document, "Appearance", "textScale", 1.0, 0.8, 1.5, errors),
         panelWorkspace: stringValue(document, "Appearance", "panelWorkspace", "special:term", errors, false),
         panelWidth: integerValue(document, "Appearance", "panelWidth", 420, 240, 1200, errors),
         panelMargin: integerValue(document, "Appearance", "panelMargin", 16, 0, 128, errors),

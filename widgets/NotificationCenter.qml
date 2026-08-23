@@ -15,7 +15,9 @@ Components.Card {
     property bool presented: false
     property int refreshTick: 0
     property string expandedNotificationId: ""
-    readonly property int notificationRowHeight: 48
+    readonly property int notificationRowHeight: Math.max(48,
+        Math.ceil((ThemeModule.Theme.fontSizeSupporting + ThemeModule.Theme.fontSizeCaption) * 1.25)
+            + ThemeModule.Theme.spacingMedium)
 
     onPresentedChanged: {
         if (root.presented)
@@ -164,7 +166,7 @@ Components.Card {
                         width: parent.width
                         text: root.primaryText(notificationRow.modelData)
                         textFormat: Text.PlainText
-                        font.pixelSize: 12
+                        font.pixelSize: ThemeModule.Theme.fontSizeSupporting
                         font.family: ThemeModule.Theme.fontFamily
                         font.bold: true
                         color: ThemeModule.Theme.text
@@ -175,7 +177,7 @@ Components.Card {
                         width: parent.width
                         text: root.detailText(notificationRow.modelData, root.refreshTick)
                         textFormat: Text.PlainText
-                        font.pixelSize: 10
+                        font.pixelSize: ThemeModule.Theme.fontSizeCaption
                         font.family: ThemeModule.Theme.fontFamily
                         color: ThemeModule.Theme.subtext
                         elide: Text.ElideRight
@@ -200,7 +202,7 @@ Components.Card {
                         width: parent.width
                         text: root.primaryText(notificationRow.modelData)
                         textFormat: Text.PlainText
-                        font.pixelSize: 12
+                        font.pixelSize: ThemeModule.Theme.fontSizeSupporting
                         font.family: ThemeModule.Theme.fontFamily
                         font.bold: true
                         color: ThemeModule.Theme.text
@@ -212,7 +214,7 @@ Components.Card {
                         text: root.compactText(notificationRow.modelData.appName || "App")
                             + " · " + root.formatTimeAgo(notificationRow.modelData.time, root.refreshTick)
                         textFormat: Text.PlainText
-                        font.pixelSize: 10
+                        font.pixelSize: ThemeModule.Theme.fontSizeCaption
                         font.family: ThemeModule.Theme.fontFamily
                         color: ThemeModule.Theme.overlay
                         wrapMode: Text.WordWrap

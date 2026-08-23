@@ -15,6 +15,7 @@ depends=(
   'libnotify'
   'networkmanager'
   'pipewire'
+  'procps-ng'
   'quickshell>=0.3.0'
   'systemd'
   'which'
@@ -26,6 +27,8 @@ optdepends=(
   'brightnessctl: brightness controls'
   'cliphist: clipboard history'
   'hyprlock: default screen locker for power actions'
+  'wf-recorder: screen recording activity integration'
+  'whisper-cpp: dictation transcription activity integration'
   'wl-clipboard: clipboard capture and copy actions'
   'xdg-utils: opening the config when VISUAL and EDITOR are unset'
 )
@@ -78,6 +81,31 @@ if [[ ! -e "$config_file" && ! -L "$config_file" ]]; then
   install -m644 "$app_dir/config.example.ini" "$config_file"
 fi
 
+ipc_call() {
+  local output
+  if output="$(/usr/bin/quickshell ipc --any-display -p "$app_dir" call "$@" 2>/dev/null)"; then
+    if [[ -n "$output" ]]; then
+      printf '%s\n' "$output"
+    fi
+    return 0
+  fi
+
+  /usr/bin/quickshell -p "$app_dir" --no-duplicate --daemonize
+
+  for _ in $(seq 1 30); do
+    if output="$(/usr/bin/quickshell ipc --any-display -p "$app_dir" call "$@" 2>/dev/null)"; then
+      if [[ -n "$output" ]]; then
+        printf '%s\n' "$output"
+      fi
+      return 0
+    fi
+    sleep 0.05
+  done
+
+  printf 'speshell: failed to contact IPC target %s\n' "${1:-unknown}" >&2
+  return 1
+}
+
 if [[ "${1:-}" == "launcher" ]]; then
   shift
   action="${1:-open}"
@@ -90,21 +118,44 @@ if [[ "${1:-}" == "launcher" ]]; then
       ;;
   esac
 
-  if /usr/bin/quickshell ipc --any-display -p "$app_dir" call launcher "$action" >/dev/null 2>&1; then
-    exit 0
-  fi
+  ipc_call launcher "$action" >/dev/null
+  exit 0
+fi
 
-  /usr/bin/quickshell -p "$app_dir" --no-duplicate --daemonize
+if [[ "${1:-}" == "activity" ]]; then
+  shift
+  action="${1:-list}"
+  shift || true
 
-  for _ in $(seq 1 30); do
-    if /usr/bin/quickshell ipc --any-display -p "$app_dir" call launcher "$action" >/dev/null 2>&1; then
-      exit 0
-    fi
-    sleep 0.05
-  done
-
-  printf 'speshell: failed to contact launcher IPC target\n' >&2
-  exit 1
+  case "$action" in
+    set)
+      if [[ $# -lt 3 || $# -gt 6 ]]; then
+        printf 'usage: speshell activity set ID STATE LABEL [DETAIL] [ICON] [TONE]\n' >&2
+        exit 2
+      fi
+      ipc_call activity publish "$1" "$2" "$3" "${4:-}" "${5:-info}" "${6:-neutral}" >/dev/null
+      ;;
+    clear)
+      if [[ $# -ne 1 ]]; then
+        printf 'usage: speshell activity clear ID\n' >&2
+        exit 2
+      fi
+      ipc_call activity clear "$1" >/dev/null
+      ;;
+    list)
+      if [[ $# -ne 0 ]]; then
+        printf 'usage: speshell activity list\n' >&2
+        exit 2
+      fi
+      ipc_call activity list
+      ;;
+    *)
+      printf 'speshell: unknown activity action: %s\n' "$action" >&2
+      printf 'usage: speshell activity [set|clear|list] ...\n' >&2
+      exit 2
+      ;;
+  esac
+  exit 0
 fi
 
 exec /usr/bin/quickshell -p "$app_dir" "$@"

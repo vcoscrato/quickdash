@@ -184,7 +184,7 @@ PanelWindow {
 
                     Text {
                         text: root.displayedMuted ? "OUTPUT MUTED" : "OUTPUT VOLUME"
-                        font.pixelSize: 10
+                        font.pixelSize: ThemeModule.Theme.fontSizeCaption
                         font.family: ThemeModule.Theme.fontFamily
                         font.bold: true
                         font.letterSpacing: 1.2

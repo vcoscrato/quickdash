@@ -125,7 +125,7 @@ Components.Card {
                     Components.IconButton {
                         anchors.verticalCenter: parent.verticalCenter
                         iconName: "media-previous"
-                        iconSize: ThemeModule.Theme.fontSizeLarge
+                        iconSize: ThemeModule.Theme.iconSizeMedium
                         tooltipText: "Previous track"
                         onClicked: { if (root.player) root.player.previous() }
                     }
@@ -133,7 +133,7 @@ Components.Card {
                     Components.IconButton {
                         anchors.verticalCenter: parent.verticalCenter
                         iconName: Services.MediaService.playing ? "media-pause" : "media-play"
-                        iconSize: ThemeModule.Theme.fontSizeXL
+                        iconSize: ThemeModule.Theme.iconSizeLarge
                         size: 44
                         iconColor: ThemeModule.Theme.accent
                         iconXOffset: Services.MediaService.playing ? 0 : 2
@@ -148,7 +148,7 @@ Components.Card {
                     Components.IconButton {
                         anchors.verticalCenter: parent.verticalCenter
                         iconName: "media-next"
-                        iconSize: ThemeModule.Theme.fontSizeLarge
+                        iconSize: ThemeModule.Theme.iconSizeMedium
                         tooltipText: "Next track"
                         onClicked: { if (root.player) root.player.next() }
                     }
@@ -202,7 +202,7 @@ Components.Card {
                 Text {
                     id: elapsedText
                     text: root.player ? root.formatTime(Services.MediaService.displayedPosition) : "0:00"
-                    font.pixelSize: 10
+                    font.pixelSize: ThemeModule.Theme.fontSizeCaption
                     font.family: ThemeModule.Theme.fontFamily
                     color: ThemeModule.Theme.overlay
                 }
@@ -215,7 +215,7 @@ Components.Card {
                 Text {
                     id: totalText
                     text: root.player ? root.formatTime(root.player.length) : "0:00"
-                    font.pixelSize: 10
+                    font.pixelSize: ThemeModule.Theme.fontSizeCaption
                     font.family: ThemeModule.Theme.fontFamily
                     color: ThemeModule.Theme.overlay
                 }

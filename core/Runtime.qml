@@ -84,12 +84,36 @@ Scope {
         function toggle() { launcherOverlay.toggleLauncher(); }
     }
 
+    IpcHandler {
+        target: "activity"
+
+        function publish(id: string, state: string, label: string, detail: string,
+                         iconName: string, tone: string): void {
+            Services.ActivityService.publish("ipc", {
+                id: id,
+                state: state,
+                label: label,
+                detail: detail,
+                iconName: iconName,
+                tone: tone,
+                priority: 50
+            });
+        }
+
+        function clear(id: string): void { Services.ActivityService.clear("ipc", id); }
+        function list(): string { return Services.ActivityService.listJson(); }
+    }
+
+    Services.ActivityProcessAdapter {}
+
     LauncherOverlay {
         id: launcherOverlay
         config: root.config
     }
 
     VolumeOsdWindow {}
+
+    ActivityOsdWindow {}
 
     NotificationToastWindow {}
 }

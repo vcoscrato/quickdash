@@ -120,7 +120,7 @@ Rectangle {
             Text {
                 id: subtitleText
                 text: root.subtitle
-                font.pixelSize: 10
+                font.pixelSize: ThemeModule.Theme.fontSizeCaption
                 font.family: ThemeModule.Theme.fontFamily
                 color: ThemeModule.Theme.subtext
                 anchors.verticalCenter: parent.verticalCenter

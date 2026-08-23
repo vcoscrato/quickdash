@@ -7,7 +7,7 @@ Components.IconButton {
     property bool active: false
     size: 30
     iconName: active ? "loader" : "refresh"
-    iconSize: ThemeModule.Theme.fontSizeNormal
+    iconSize: ThemeModule.Theme.iconSizeSmall
     iconColor: active ? ThemeModule.Theme.warning : ThemeModule.Theme.subtext
     iconSpinning: active
 }

@@ -433,7 +433,7 @@ Item {
                                     anchors.leftMargin: ThemeModule.Theme.spacingTiny
                                     anchors.verticalCenter: parent.verticalCenter
                                     width: trayLabel.implicitWidth + ThemeModule.Theme.spacingLarge
-                                    height: 26
+                                    height: Math.max(26, trayLabel.implicitHeight + ThemeModule.Theme.spacingSmall)
                                     radius: ThemeModule.Theme.borderRadiusSmall
                                     visible: sidebarTrayDelegate.containingWindowVisible
                                         && sidebarTrayDelegate.pointerInside

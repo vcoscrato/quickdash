@@ -397,7 +397,7 @@ Components.Card {
 
                         Text {
                             text: root.formatTimer(root.remainingSeconds)
-                            font.pixelSize: 14
+                            font.pixelSize: ThemeModule.Theme.fontSizeEmphasis
                             font.family: ThemeModule.Theme.fontFamily
                             font.bold: true
                             color: ThemeModule.Theme.text
@@ -405,7 +405,7 @@ Components.Card {
 
                         Text {
                             text: "Focus timer"
-                            font.pixelSize: 9
+                            font.pixelSize: ThemeModule.Theme.fontSizeMicro
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.overlay
                         }
@@ -430,7 +430,7 @@ Components.Card {
                         Text {
                             anchors.centerIn: parent
                             text: "+5"
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                             font.bold: true
                             color: root.timerAccentColor()
@@ -522,7 +522,7 @@ Components.Card {
                             text: root.timerRunning
                                 ? root.formatTimer(root.remainingSeconds) + " remaining"
                                 : "Choose a preset or enter minutes"
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.subtext
                         }
@@ -572,7 +572,7 @@ Components.Card {
                             Text {
                                 anchors.centerIn: parent
                                 text: (root.timerRunning ? "+" : "") + presetButton.modelData + "m"
-                                font.pixelSize: 11
+                                font.pixelSize: ThemeModule.Theme.fontSizeSmall
                                 font.family: ThemeModule.Theme.fontFamily
                                 font.bold: presetButton.primary
                                 color: presetButton.primary ? root.timerAccentColor() : ThemeModule.Theme.text

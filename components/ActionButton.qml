@@ -12,7 +12,8 @@ Rectangle {
     signal activated()
 
     width: implicitWidth
-    height: 34
+    implicitHeight: Math.max(34, contentRow.implicitHeight + ThemeModule.Theme.spacingMedium)
+    height: implicitHeight
     implicitWidth: Math.max(34, contentRow.implicitWidth + ThemeModule.Theme.spacingLarge)
     radius: ThemeModule.Theme.borderRadiusSmall
     opacity: enabled ? 1.0 : 0.55

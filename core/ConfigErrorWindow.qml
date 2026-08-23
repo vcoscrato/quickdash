@@ -97,7 +97,7 @@ PanelWindow {
                             text: "Configuration invalid"
                             color: "#f4f7fa"
                             font.family: ThemeModule.Theme.fontFamily
-                            font.pixelSize: 20
+                            font.pixelSize: ThemeModule.Theme.fontSizeTitle
                             font.bold: true
                         }
 
@@ -106,7 +106,7 @@ PanelWindow {
                             text: "Speshell is stopped until the configuration is corrected."
                             color: "#aeb8c4"
                             font.family: ThemeModule.Theme.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: ThemeModule.Theme.fontSizeSupporting
                             wrapMode: Text.WordWrap
                         }
                     }
@@ -126,7 +126,7 @@ PanelWindow {
                         text: Services.ConfigService.configPath || "~/.config/speshell/config.ini"
                         color: "#c6d0dc"
                         font.family: "monospace"
-                        font.pixelSize: 11
+                        font.pixelSize: ThemeModule.Theme.fontSizeSmall
                         elide: Text.ElideMiddle
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -158,7 +158,7 @@ PanelWindow {
                         selectionColor: "#4978a8"
                         selectedTextColor: "#ffffff"
                         font.family: "monospace"
-                        font.pixelSize: 12
+                        font.pixelSize: ThemeModule.Theme.fontSizeSupporting
                         leftPadding: 14
                         rightPadding: 14
                         topPadding: 12
@@ -178,7 +178,7 @@ PanelWindow {
                         text: Services.ConfigService.operationMessage
                         color: Services.ConfigService.operationFailed ? "#ff8080" : "#7bd9a5"
                         font.family: ThemeModule.Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: ThemeModule.Theme.fontSizeSmall
                         elide: Text.ElideRight
                     }
 

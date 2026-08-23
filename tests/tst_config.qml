@@ -8,6 +8,7 @@ TestCase {
     property string validConfig: [
         "[Appearance]",
         "colorScheme = nord",
+        "textScale = 1.15",
         "panelWorkspace = special:dash",
         "panelWidth = 600",
         "panelMargin = 0",
@@ -59,6 +60,7 @@ TestCase {
         var result = Config.parseAndValidate(validConfig);
         verify(result.ok, result.errors.length > 0 ? result.errors[0].message : "");
         compare(result.config.colorScheme, "nord");
+        compare(result.config.textScale, 1.15);
         compare(result.config.panelWorkspace, "special:dash");
         compare(result.config.panelWidth, 600);
         compare(result.config.panelMargin, 0);
@@ -80,6 +82,7 @@ TestCase {
     function test_defaults() {
         var result = Config.parseAndValidate("[Appearance]\n");
         verify(result.ok);
+        compare(result.config.textScale, 1.0);
         compare(result.config.panelMargin, 16);
         compare(result.config.audioPanelMode, "combined");
         compare(result.config.launcher.visibleRows, 5);
@@ -89,6 +92,8 @@ TestCase {
     function test_invalid_data() {
         return [
             { tag: "bad margin", text: "[Appearance]\npanelMargin = -1", message: "Expected a value from 0 to 128" },
+            { tag: "bad text scale", text: "[Appearance]\ntextScale = 1.75", message: "Expected a value from 0.8 to 1.5" },
+            { tag: "malformed text scale", text: "[Appearance]\ntextScale = large", message: "Expected a number" },
             { tag: "partial integer", text: "[Launcher]\nvisibleRows = 5rows", message: "Expected a whole number" },
             { tag: "bad boolean", text: "[Weather]\nenabled = yes", message: "Expected true or false" },
             { tag: "bad mode", text: "[Audio]\npanelMode = merged", message: "Expected one of" },

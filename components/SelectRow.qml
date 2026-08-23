@@ -12,7 +12,9 @@ Rectangle {
     signal activated()
 
     width: parent ? parent.width : 300
-    height: 32
+    implicitHeight: Math.max(32, Math.max(labelText.implicitHeight, valueRow.implicitHeight)
+        + ThemeModule.Theme.spacingSmall * 2)
+    height: implicitHeight
     radius: ThemeModule.Theme.borderRadiusSmall
     opacity: root.enabled ? 1.0 : 0.45
     color: selectMouse.containsMouse && root.enabled
@@ -28,16 +30,23 @@ Rectangle {
     }
 
     Text {
+        id: labelText
+
         text: root.label
         font.pixelSize: ThemeModule.Theme.fontSizeSmall
         font.family: ThemeModule.Theme.fontFamily
         color: ThemeModule.Theme.subtext
         anchors.left: parent.left
         anchors.leftMargin: ThemeModule.Theme.spacingSmall
+        anchors.right: valueRow.left
+        anchors.rightMargin: ThemeModule.Theme.spacingSmall
         anchors.verticalCenter: parent.verticalCenter
+        elide: Text.ElideRight
     }
 
     Row {
+        id: valueRow
+
         anchors.right: parent.right
         anchors.rightMargin: ThemeModule.Theme.spacingSmall
         anchors.verticalCenter: parent.verticalCenter

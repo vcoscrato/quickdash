@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls as Controls
 import "." as Components
+import "../theme" as ThemeModule
 
 Components.SelectRow {
     id: root
@@ -54,6 +55,8 @@ Components.SelectRow {
                 focusPolicy: Qt.ClickFocus
 
                 text: root.optionLabel(modelData)
+                font.family: ThemeModule.Theme.fontFamily
+                font.pixelSize: ThemeModule.Theme.fontSizeSmall
                 checkable: true
                 checked: root.optionValue(modelData) === root.currentValue
                 enabled: root.enabled

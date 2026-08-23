@@ -126,7 +126,7 @@ Components.Card {
 
         Text {
             text: "SYSTEM CAPABILITIES"
-            font.pixelSize: 9
+            font.pixelSize: ThemeModule.Theme.fontSizeMicro
             font.family: ThemeModule.Theme.fontFamily
             font.bold: true
             font.letterSpacing: 0.8

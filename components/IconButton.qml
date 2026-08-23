@@ -7,7 +7,7 @@ Rectangle {
     id: root
 
     property string iconName: ""
-    property int iconSize: ThemeModule.Theme.fontSizeLarge
+    property int iconSize: ThemeModule.Theme.iconSizeMedium
     property color iconColor: ThemeModule.Theme.text
     property color hoverColor: ThemeModule.Theme.cardHover
     property real size: 36

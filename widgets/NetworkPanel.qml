@@ -132,7 +132,7 @@ Components.Card {
 
                         Text {
                             text: "Connected"
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                             color: ThemeModule.Theme.success
                         }
@@ -354,7 +354,7 @@ Components.Card {
                         visible: root.network.passwordRowName === nearbyNetworkDelegate.modelData.name
                             && root.network.connectErrorName === nearbyNetworkDelegate.modelData.name
                         text: root.network.connectError
-                        font.pixelSize: 10
+                        font.pixelSize: ThemeModule.Theme.fontSizeCaption
                         font.family: ThemeModule.Theme.fontFamily
                         color: ThemeModule.Theme.error
                     }
@@ -368,7 +368,7 @@ Components.Card {
             Text {
                 visible: root.network.wifiOn && root.network.wifiDevice !== null && root.network.networkListStatusText() !== ""
                 text: root.network.networkListStatusText()
-                font.pixelSize: 10
+                font.pixelSize: ThemeModule.Theme.fontSizeCaption
                 font.family: ThemeModule.Theme.fontFamily
                 color: root.network.isScanning ? ThemeModule.Theme.accent : ThemeModule.Theme.overlay
                 anchors.horizontalCenter: parent.horizontalCenter

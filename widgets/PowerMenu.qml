@@ -256,7 +256,7 @@ Components.Card {
                         Text {
                             text: powerAction.modelData.detail
                             color: ThemeModule.Theme.subtext
-                            font.pixelSize: 10
+                            font.pixelSize: ThemeModule.Theme.fontSizeCaption
                             font.family: ThemeModule.Theme.fontFamily
                         }
                     }

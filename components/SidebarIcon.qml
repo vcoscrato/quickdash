@@ -83,7 +83,7 @@ Rectangle {
         anchors.leftMargin: ThemeModule.Theme.spacingTiny
         anchors.verticalCenter: parent.verticalCenter
         width: nameTagText.implicitWidth + ThemeModule.Theme.spacingLarge
-        height: 26
+        height: Math.max(26, nameTagText.implicitHeight + ThemeModule.Theme.spacingSmall)
         radius: ThemeModule.Theme.borderRadiusSmall
         visible: root.containingWindowVisible
             && root.pointerInside

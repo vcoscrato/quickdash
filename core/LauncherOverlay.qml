@@ -25,7 +25,9 @@ PanelWindow {
     readonly property int configuredWidth: root.launcherConfig.width || 540
     readonly property int configuredVisibleRows: root.launcherConfig.visibleRows || 5
     readonly property int paletteWidth: Math.min(root.configuredWidth, Math.max(320, root.width - ThemeModule.Theme.spacingXL * 2))
-    readonly property int resultRowHeight: 56
+    readonly property int resultRowHeight: Math.max(56,
+        Math.ceil((ThemeModule.Theme.fontSizeNormal + ThemeModule.Theme.fontSizeSmall) * 1.25)
+            + ThemeModule.Theme.spacingMedium * 2)
     readonly property int resultSpacing: ThemeModule.Theme.spacingTiny
     readonly property int resultViewportHeight: root.configuredVisibleRows * root.resultRowHeight
         + Math.max(0, root.configuredVisibleRows - 1) * root.resultSpacing
@@ -172,7 +174,9 @@ PanelWindow {
 
             Rectangle {
                 width: parent.width
-                height: 48
+                height: Math.max(48,
+                    Math.ceil(ThemeModule.Theme.fontSizeLarge * 1.35)
+                        + ThemeModule.Theme.spacingMedium * 2)
                 radius: ThemeModule.Theme.borderRadiusSmall
                 color: ThemeModule.Theme.card
                 border.width: ThemeModule.Theme.borderWidth
@@ -344,7 +348,7 @@ PanelWindow {
                         text: resultRow.modelData.badge || ""
                         color: resultRow.index === root.selectedIndex ? ThemeModule.Theme.accent : ThemeModule.Theme.overlay
                         font.family: ThemeModule.Theme.fontFamily
-                        font.pixelSize: 9
+                        font.pixelSize: ThemeModule.Theme.fontSizeMicro
                         font.bold: true
                         font.letterSpacing: 0.8
                     }
@@ -366,7 +370,9 @@ PanelWindow {
 
             Item {
                 width: parent.width
-                height: 54
+                height: Math.max(54,
+                    Math.ceil(ThemeModule.Theme.fontSizeNormal * 1.35)
+                        + ThemeModule.Theme.spacingLarge * 2)
                 visible: root.resultCount === 0
 
                 Row {

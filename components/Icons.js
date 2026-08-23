@@ -55,6 +55,7 @@ var files = ({
     "refresh": "refresh",
     "restart": "reload",
     "search": "search",
+    "screen-recording": "device-desktop",
     "sleep": "moon",
     "timer": "clock",
     "tray-fallback": "circle-dashed",

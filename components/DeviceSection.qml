@@ -9,9 +9,12 @@ Item {
     property bool expanded: true
 
     width: parent ? parent.width : 300
-    height: 22
+    implicitHeight: Math.max(22, sectionRow.implicitHeight + ThemeModule.Theme.spacingTiny)
+    height: implicitHeight
 
     Row {
+        id: sectionRow
+
         anchors.verticalCenter: parent.verticalCenter
         spacing: ThemeModule.Theme.spacingSmall
 
@@ -25,7 +28,7 @@ Item {
 
         Rectangle {
             radius: ThemeModule.Theme.borderRadiusSmall
-            height: 16
+            height: Math.max(16, countText.implicitHeight + ThemeModule.Theme.spacingTiny)
             width: countText.width + 10
             color: Qt.rgba(ThemeModule.Theme.overlay.r, ThemeModule.Theme.overlay.g, ThemeModule.Theme.overlay.b, 0.2)
 
@@ -33,7 +36,7 @@ Item {
                 id: countText
                 anchors.centerIn: parent
                 text: root.count
-                font.pixelSize: 9
+                font.pixelSize: ThemeModule.Theme.fontSizeMicro
                 font.family: ThemeModule.Theme.fontFamily
                 color: ThemeModule.Theme.subtext
             }
